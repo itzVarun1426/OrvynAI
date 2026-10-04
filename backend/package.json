@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node --env-file=.env server.js"
   },
   "keywords": [],
   "author": "",
@@ -12,6 +12,7 @@
   "type": "module",
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1141.0",
+    "@aws-sdk/s3-request-presigner": "^3.1145.0",
     "@google/genai": "^1.48.0",
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",

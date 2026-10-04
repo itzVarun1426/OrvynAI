@@ -4,10 +4,12 @@ import { useParams, useNavigate } from 'react-router';
 import { interviewContext } from '../interview.context';
 import { getInterviewReportById } from '../services/interview.api';
 import ThemeToggle from '../../../components/ThemeToggle';
+import { useAuth } from '../../auth/hooks/useAuth';
 
 const Evaluation = () => {
   const { interviewId } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { report, setReport, interviewLoading, setInterviewLoading } = useContext(interviewContext);
 
   const [activeTab, setActiveTab] = useState('overview');
@@ -98,7 +100,17 @@ const Evaluation = () => {
         className="w-full max-w-7xl px-8 h-20 flex items-center justify-between sticky top-0 z-50 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 print:hidden shadow-sm transition-colors"
       >
         <div className="flex items-center gap-4">
-          <div className="w-10 h-10 rounded-lg bg-primary/10 dark:bg-primary/20 text-primary flex items-center justify-center cursor-pointer hover:bg-primary/20 dark:hover:bg-primary/30 transition-colors" onClick={() => navigate('/dashboard')}>
+          <div 
+            className="w-10 h-10 rounded-lg bg-primary/10 dark:bg-primary/20 text-primary flex items-center justify-center cursor-pointer hover:bg-primary/20 dark:hover:bg-primary/30 transition-colors" 
+            onClick={() => {
+              if (window.history.length > 1) {
+                navigate(-1);
+              } else {
+                navigate('/dashboard');
+              }
+            }}
+            title="Go Back"
+          >
             <span className="material-symbols-outlined text-lg">arrow_back</span>
           </div>
           <div className="flex flex-col">
@@ -109,6 +121,17 @@ const Evaluation = () => {
 
         <div className="flex items-center gap-4">
           <ThemeToggle />
+          <button
+            onClick={() => navigate('/profile')}
+            className="w-9 h-9 rounded-full overflow-hidden bg-primary/10 text-primary font-bold text-xs flex items-center justify-center border border-slate-200 dark:border-slate-800 hover:border-primary transition-colors"
+            title="My Profile"
+          >
+            {user?.avatar ? (
+              <img src={user.avatar} alt="Avatar" className="w-full h-full object-cover" />
+            ) : (
+              <span>{(user?.fullName || user?.username || 'U').charAt(0).toUpperCase()}</span>
+            )}
+          </button>
           <button
             disabled={isPrinting}
             onClick={handlePrint}

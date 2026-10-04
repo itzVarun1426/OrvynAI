@@ -1,5 +1,7 @@
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import path from 'path';
+import crypto from 'crypto';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 
@@ -8,64 +10,121 @@ const __dirname = path.dirname(__filename);
 
 const region = process.env.AWS_REGION || 'us-east-1';
 const bucketName = process.env.AWS_S3_BUCKET_NAME;
-const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
-const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
 
-let s3Client = null;
-if (accessKeyId && secretAccessKey && bucketName) {
-    s3Client = new S3Client({
-        region,
-        credentials: {
-            accessKeyId,
-            secretAccessKey
-        }
-    });
+// Initialize AWS SDK v3 S3 Client.
+// When deployed on EC2, the SDK uses the standard AWS credential provider chain
+// which automatically fetches temporary credentials from the EC2 Instance IAM Role.
+const s3Client = new S3Client({
+    region
+});
+
+const ALLOWED_MIME_TYPES = new Set([
+    'image/jpeg',
+    'image/jpg',
+    'image/png',
+    'image/webp',
+    'image/gif'
+]);
+
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB limit
+
+/**
+ * Validate image file
+ * @param {Object} file - Multer file object
+ */
+export function validateImageFile(file) {
+    if (!file) {
+        throw new Error('No image file provided.');
+    }
+
+    if (!ALLOWED_MIME_TYPES.has(file.mimetype)) {
+        throw new Error('Invalid image format. Allowed formats: JPEG, PNG, WebP, GIF.');
+    }
+
+    if (file.size > MAX_FILE_SIZE) {
+        throw new Error('Image file is too large. Maximum allowed size is 5MB.');
+    }
 }
 
 /**
- * Upload image buffer/file to S3 if configured, else save locally to /uploads.
+ * Upload profile avatar image to AWS S3 (or fallback to local storage if S3 bucket is not set)
  * @param {Object} file - Multer file object
- * @returns {Promise<string>} Public URL of the uploaded image
+ * @param {string} userId - User MongoDB ID
+ * @returns {Promise<string>} S3 Object Key (e.g., users/{userId}/avatars/{filename}) or local fallback path
  */
-export async function uploadToS3OrLocal(file) {
-    if (!file) {
-        throw new Error('No file provided for upload');
-    }
+export async function uploadAvatarImage(file, userId) {
+    validateImageFile(file);
 
-    const ext = path.extname(file.originalname) || '.jpg';
-    const filename = `avatar-${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
+    const extMap = {
+        'image/jpeg': '.jpg',
+        'image/jpg': '.jpg',
+        'image/png': '.png',
+        'image/webp': '.webp',
+        'image/gif': '.gif'
+    };
+    const ext = extMap[file.mimetype] || path.extname(file.originalname) || '.jpg';
+    const randomName = `${Date.now()}-${crypto.randomBytes(8).toString('hex')}${ext}`;
 
-    // Try AWS S3 if credentials are provided
-    if (s3Client && bucketName) {
+    const safeUserId = userId ? String(userId) : 'guest';
+    const objectKey = `users/${safeUserId}/avatars/${randomName}`;
+
+    // Upload to AWS S3 if bucket is configured
+    if (bucketName) {
         try {
             const command = new PutObjectCommand({
                 Bucket: bucketName,
-                Key: `avatars/${filename}`,
-                Body: file.buffer || fs.readFileSync(file.path),
-                ContentType: file.mimetype || 'image/jpeg',
-                ACL: 'public-read'
+                Key: objectKey,
+                Body: file.buffer,
+                ContentType: file.mimetype
+                // Private bucket: NO ACL ('public-read' omitted)
             });
 
             await s3Client.send(command);
-            return `https://${bucketName}.s3.${region}.amazonaws.com/avatars/${filename}`;
+            return objectKey; // Store S3 object key in database
         } catch (s3Err) {
-            console.warn('AWS S3 Upload Warning (Falling back to local storage):', s3Err.message);
+            console.error('S3 Upload Error:', s3Err.message);
+            // Fallback to local storage if S3 is unavailable or unconfigured
         }
     }
 
-    // Fallback to local storage in public/uploads
+    // Local disk fallback for local development without S3
     const uploadsDir = path.join(__dirname, '../../public/uploads');
     if (!fs.existsSync(uploadsDir)) {
         fs.mkdirSync(uploadsDir, { recursive: true });
     }
 
-    const localFilePath = path.join(uploadsDir, filename);
+    const localFilename = `avatar-${safeUserId}-${randomName}`;
+    const localFilePath = path.join(uploadsDir, localFilename);
+    fs.writeFileSync(localFilePath, file.buffer);
 
-    if (file.buffer) {
-        fs.writeFileSync(localFilePath, file.buffer);
-    } else if (file.path) {
-        fs.copyFileSync(file.path, localFilePath);
+    return `http://localhost:5000/uploads/${localFilename}`;
+}
+
+/**
+ * Generate a presigned GET URL for reading a private S3 object.
+ * @param {string} avatarRef - S3 Object Key, full URL, or local URL
+ * @param {number} expiresInSeconds - Presigned URL validity duration (default: 3600 seconds / 1 hour)
+ * @returns {Promise<string>} Presigned GET URL or original URL
+ */
+export async function getPresignedAvatarUrl(avatarRef, expiresInSeconds = 3600) {
+    if (!avatarRef) {
+        return '';
     }
 
-    return `http://localhost:5000/uploads/${filename}`;
+    // If it's an S3 object key (starts with 'users/')
+    if (avatarRef.startsWith('users/') && bucketName) {
+        try {
+            const command = new GetObjectCommand({
+                Bucket: bucketName,
+                Key: avatarRef
+            });
+            return await getSignedUrl(s3Client, command, { expiresIn: expiresInSeconds });
+        } catch (err) {
+            console.error('Failed to generate S3 presigned URL:', err.message);
+            return '';
+        }
+    }
+
+    // Return external or local fallback URL as-is
+    return avatarRef;
 }

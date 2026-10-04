@@ -1,0 +1,24 @@
+services:
+
+  backend:
+    build:
+      context: ./backend
+    container_name: interview-backend-cont
+    env_file: 
+      - ./backend/.env
+    ports:
+      - "5000:5000"
+    restart: unless-stopped
+  
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: http://localhost:5000/
+        VITE_GOOGLE_CLIENT_ID: 601045227088-o7bta9cl27b4khe6kjed2k3m16cef9ma.apps.googleusercontent.com
+    container_name: interview-frontend-cont
+    ports: 
+     - 80:80
+    restart: unless-stopped
+    depends_on:
+      - backend

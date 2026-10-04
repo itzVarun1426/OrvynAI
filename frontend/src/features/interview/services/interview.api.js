@@ -32,23 +32,18 @@ const generateInterviewReport = async ({ selfDescription, jobDescription, resume
 const getInterviewReportById = async (interviewId) => {
     try {
         if (!interviewId) {
-            console.log("interviewId is required");
             return null;
         }
 
         const response = await api.get(`/api/interview/report/${interviewId}`);
 
-        console.log("API RESPONSE:", response.data); // 🔥 DEBUG
-
         if (!response.data) {
-            console.log("No reports yet");
             return null;
         }
 
         return response.data;
 
     } catch (err) {
-        console.log("error in interview.api.js while getting interview report by id", err);
         return null;
     }
 };

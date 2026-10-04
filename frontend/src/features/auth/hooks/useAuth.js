@@ -1,6 +1,6 @@
 import { useContext, useState } from "react";
 import { authContext } from "../Auth.context.jsx";
-import { login, register, logout, googleLogin } from "../services/auth.api.js";
+import { login, register, logout, googleLogin, updateProfileApi, uploadAvatarApi } from "../services/auth.api.js";
 
 export const useAuth = () => {
     const context = useContext(authContext);
@@ -70,6 +70,34 @@ export const useAuth = () => {
         }
     };
 
+    const handleUpdateProfile = async (profileData) => {
+        setAuthError(null);
+        try {
+            const data = await updateProfileApi(profileData);
+            if (data?.user) {
+                setUser(data.user);
+            }
+            return data;
+        } catch (err) {
+            setAuthError(err.message || "Failed to update profile");
+            throw err;
+        }
+    };
+
+    const handleUploadAvatar = async (file) => {
+        setAuthError(null);
+        try {
+            const data = await uploadAvatarApi(file);
+            if (data?.user) {
+                setUser(data.user);
+            }
+            return data;
+        } catch (err) {
+            setAuthError(err.message || "Failed to upload avatar");
+            throw err;
+        }
+    };
+
     return {
         user,
         loading,
@@ -77,6 +105,8 @@ export const useAuth = () => {
         handleLogin,
         handleRegister,
         handleLogout,
-        handleGoogleLogin
+        handleGoogleLogin,
+        handleUpdateProfile,
+        handleUploadAvatar
     };
 };

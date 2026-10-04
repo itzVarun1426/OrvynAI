@@ -2,6 +2,7 @@ import { createBrowserRouter, RouterProvider } from 'react-router';
 import App from './App.jsx';
 import Login from './features/auth/pages/Login.jsx';
 import Register from './features/auth/pages/Register.jsx';
+import Profile from './features/auth/pages/Profile.jsx';
 import Protected from './features/auth/components/Protected.jsx';
 import Landing from './features/interview/pages/Landing.jsx';
 import Dashboard from './features/interview/pages/Dashboard.jsx';
@@ -22,6 +23,10 @@ export const router = createBrowserRouter([
     {
         path: "/register",
         element: <Register />
+    },
+    {
+        path: "/profile",
+        element: <Protected><Profile /></Protected>
     },
     {
         path: "/dashboard",

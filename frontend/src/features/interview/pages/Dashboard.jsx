@@ -8,7 +8,7 @@ import { useAuth } from '../../auth/hooks/useAuth';
 const Dashboard = () => {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
-  const { handleLogout } = useAuth();
+  const { user, handleLogout } = useAuth();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   const {
@@ -116,9 +116,15 @@ const Dashboard = () => {
           <div className="relative">
             <button 
               onClick={() => setIsSettingsOpen(!isSettingsOpen)}
-              className={`text-slate-500 dark:text-slate-400 hover:text-primary transition-colors cursor-pointer flex items-center justify-center ${isSettingsOpen ? 'text-primary' : ''}`}
+              className="flex items-center gap-2 p-1 rounded-full border border-slate-200 dark:border-slate-800 hover:border-primary transition-colors cursor-pointer"
             >
-              <span className="material-symbols-outlined">settings</span>
+              <div className="w-8 h-8 rounded-full overflow-hidden bg-primary/10 text-primary font-bold text-xs flex items-center justify-center">
+                {user?.avatar ? (
+                  <img src={user.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                ) : (
+                  <span>{(user?.fullName || user?.username || 'U').charAt(0).toUpperCase()}</span>
+                )}
+              </div>
             </button>
             <AnimatePresence>
               {isSettingsOpen && (
@@ -127,18 +133,34 @@ const Dashboard = () => {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 10, scale: 0.95 }}
                   transition={{ duration: 0.2 }}
-                  className="absolute right-0 mt-3 w-48 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl z-50 overflow-hidden"
+                  className="absolute right-0 mt-3 w-52 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl z-50 overflow-hidden divide-y divide-slate-100 dark:divide-slate-800"
                 >
-                  <button 
-                    onClick={async () => {
-                      await handleLogout();
-                      navigate('/login');
-                    }}
-                    className="w-full text-left px-4 py-3 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-3 font-medium"
-                  >
-                    <span className="material-symbols-outlined text-[20px]">logout</span>
-                    Logout
-                  </button>
+                  <div className="p-3 bg-slate-50/50 dark:bg-slate-950/50">
+                    <p className="text-xs font-bold text-slate-900 dark:text-white truncate">{user?.fullName || user?.username || 'User'}</p>
+                    <p className="text-[10px] text-slate-500 truncate">{user?.email}</p>
+                  </div>
+                  <div className="py-1">
+                    <button
+                      onClick={() => {
+                        setIsSettingsOpen(false);
+                        navigate('/profile');
+                      }}
+                      className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-2.5 font-medium"
+                    >
+                      <span className="material-symbols-outlined text-[18px] text-primary">account_circle</span>
+                      Edit Profile
+                    </button>
+                    <button 
+                      onClick={async () => {
+                        await handleLogout();
+                        navigate('/login');
+                      }}
+                      className="w-full text-left px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-2.5 font-medium"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">logout</span>
+                      Logout
+                    </button>
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>

@@ -122,15 +122,19 @@ const Landing = () => {
               </a>
             </motion.div>
 
-            <motion.div variants={fadeUp} className="mt-12 flex items-center justify-center lg:justify-start gap-6 text-sm text-slate-500 font-medium">
-              <div className="flex -space-x-3">
-                {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className={`w-10 h-10 rounded-full border-2 border-white dark:border-slate-950 bg-slate-200 dark:bg-slate-800 flex items-center justify-center z-[${5-i}]`}>
-                    <span className="material-symbols-outlined text-sm text-slate-400">person</span>
-                  </div>
-                ))}
-              </div>
-              <p>Join <span className="text-primary font-bold">10,000+</span> candidates</p>
+            <motion.div variants={fadeUp} className="mt-12 flex flex-wrap items-center justify-center lg:justify-start gap-4 text-xs font-semibold text-slate-500 dark:text-slate-400">
+              <span className="px-3.5 py-1.5 rounded-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                Real-Time Voice Analysis
+              </span>
+              <span className="px-3.5 py-1.5 rounded-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                Tailored Readiness Roadmap
+              </span>
+              <span className="px-3.5 py-1.5 rounded-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                PDF Report Export
+              </span>
             </motion.div>
           </motion.div>
 
