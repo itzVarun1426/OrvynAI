@@ -1,6 +1,6 @@
 import { useContext, useState } from "react";
 import { authContext } from "../Auth.context.jsx";
-import { login, register, logout, googleLogin, updateProfileApi, uploadAvatarApi } from "../services/auth.api.js";
+import { login, register, logout, googleLogin, updateProfileApi, uploadAvatarApi, sendOTP, verifyOTP, resendOTP } from "../services/auth.api.js";
 
 export const useAuth = () => {
     const context = useContext(authContext);
@@ -19,7 +19,7 @@ export const useAuth = () => {
             return true;
         } catch (err) {
             setAuthError(err.message || "Invalid credentials");
-            return false;
+            throw err;
         } finally {
             setLoading(false);
         }
@@ -98,6 +98,49 @@ export const useAuth = () => {
         }
     };
 
+    const handleSendOTP = async ({ email }) => {
+        setAuthError(null);
+        try {
+            setLoading(true);
+            const data = await sendOTP({ email });
+            return true;
+        } catch (err) {
+            setAuthError(err.message || "Failed to send OTP");
+            return false;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleVerifyOTP = async ({ email, otp }) => {
+        setAuthError(null);
+        try {
+            setLoading(true);
+            const data = await verifyOTP({ email, otp });
+            setUser(data.user);
+            return true;
+        } catch (err) {
+            setAuthError(err.message || "Invalid OTP");
+            return false;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleResendOTP = async ({ email }) => {
+        setAuthError(null);
+        try {
+            setLoading(true);
+            const data = await resendOTP({ email });
+            return data;
+        } catch (err) {
+            setAuthError(err.message || "Failed to resend OTP");
+            return false;
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return {
         user,
         loading,
@@ -107,6 +150,9 @@ export const useAuth = () => {
         handleLogout,
         handleGoogleLogin,
         handleUpdateProfile,
-        handleUploadAvatar
+        handleUploadAvatar,
+        handleSendOTP,
+        handleVerifyOTP,
+        handleResendOTP
     };
 };

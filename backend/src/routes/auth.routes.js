@@ -42,7 +42,7 @@ const router = Router();
 
 /**
  * @POST /api/auth/register
- * @description create new user 
+ * @description create new user (initiates OTP verification)
  * @access public
  */
 router.post("/register", authController.registerUser);
@@ -62,6 +62,27 @@ router.post("/login", authController.loginUser);
 router.post("/google", authController.googleAuth);
 
 /**
+ * @POST /api/auth/send-otp
+ * @description send OTP to email
+ * @access public
+ */
+router.post("/send-otp", authController.sendOTP);
+
+/**
+ * @POST /api/auth/verify-otp
+ * @description verify OTP and complete registration
+ * @access public
+ */
+router.post("/verify-otp", authController.verifyOTP);
+
+/**
+ * @POST /api/auth/resend-otp
+ * @description resend OTP to email
+ * @access public
+ */
+router.post("/resend-otp", authController.resendOTP);
+
+/**
  * @POST /api/auth/logout
  * @description logout user
  * @access private
@@ -71,7 +92,7 @@ router.post("/logout", authController.logoutUser);
 /**
  * @GET /api/auth/get-me
  * @description returns current user information
- * @access private 
+ * @access private
  */
 router.get("/get-me", authMiddleware.authUser, authController.getCurrentUser);
 

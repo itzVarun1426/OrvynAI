@@ -108,7 +108,7 @@ const Dashboard = () => {
             i
           </div>
           <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
-            Interview<span className="text-primary">AI</span>
+            IntervAI
           </span>
         </div>
         <div className="flex items-center gap-4">

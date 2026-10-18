@@ -35,6 +35,27 @@ const userSchema = new mongoose.Schema({
         type: String,
         enum: ["Junior", "Mid-Level", "Senior", "Lead / Principal", "Executive", ""],
         default: ""
+    },
+    // Email verification fields
+    isVerified: {
+        type: Boolean,
+        default: false
+    },
+    verificationToken: {
+        type: String,
+        default: ""
+    },
+    verificationExpires: {
+        type: Date,
+        default: null
+    },
+    verificationAttempts: {
+        type: Number,
+        default: 0
+    },
+    lastOtpSentAt: {
+        type: Date,
+        default: null
     }
 }, { timestamps: true });
 

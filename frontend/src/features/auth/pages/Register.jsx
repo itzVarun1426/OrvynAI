@@ -1,35 +1,277 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { useAuth } from '../hooks/useAuth.js';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff } from 'lucide-react';
 import { GoogleLogin } from '@react-oauth/google';
 import ThemeToggle from '../../../components/ThemeToggle';
+import OTPInput from '../components/OTPInput.jsx';
 
 const Register = () => {
-  const { loading, handleRegister, handleGoogleLogin, authError } = useAuth();
+  const { loading, handleRegister, handleGoogleLogin, authError, handleVerifyOTP, handleResendOTP } = useAuth();
   const navigate = useNavigate();
 
   const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
+  const [emailState, setEmailState] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
+  // OTP verification state
+  const [otp, setOTP] = useState("");
+  const [isVerifyingScreen, setIsVerifyingScreen] = useState(false);
+  const [verifyLoading, setVerifyLoading] = useState(false);
+  const [verifyError, setVerifyError] = useState("");
+  const [resendStatus, setResendStatus] = useState("");
+  const [resendCountdown, setResendCountdown] = useState(0);
+
+  // Validation states
+  const [usernameError, setUsernameError] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Resend cooldown timer
+  useEffect(() => {
+    let timer;
+    if (resendCountdown > 0) {
+      timer = setTimeout(() => {
+        setResendCountdown(prev => prev - 1);
+      }, 1000);
+    }
+    return () => clearTimeout(timer);
+  }, [resendCountdown]);
+
+  // Validation functions
+  const validateUsername = (name) => {
+    if (!name) return 'Full name is required';
+    if (name.trim().length < 2) return 'Full name must be at least 2 characters long';
+    if (!/[a-zA-Z]/.test(name)) return 'Please enter a valid full name';
+    return '';
+  };
+
+  const validateEmail = (email) => {
+    if (!email) return 'Email is required';
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) return 'Please enter a valid email address';
+    return '';
+  };
+
+  const validatePassword = (pass) => {
+    if (!pass) return 'Password is required';
+    if (pass.length < 8) return 'Password must be at least 8 characters long';
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*(),.?":{}|<>])/;
+    if (!passwordRegex.test(pass)) {
+      return 'Password must contain at least one uppercase letter, one lowercase letter, and one special character';
+    }
+    return '';
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const success = await handleRegister({ username, email, password });
-    if (success) {
-      navigate("/dashboard");
+
+    const usernameErrorMsg = validateUsername(username);
+    const emailErrorMsg = validateEmail(emailState);
+    const passwordErrorMsg = validatePassword(password);
+
+    setUsernameError(usernameErrorMsg);
+    setEmailError(emailErrorMsg);
+    setPasswordError(passwordErrorMsg);
+
+    if (usernameErrorMsg || emailErrorMsg || passwordErrorMsg) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const success = await handleRegister({ 
+        username: username.trim(), 
+        email: emailState.toLowerCase().trim(), 
+        password 
+      });
+      if (success) {
+        setIsVerifyingScreen(true);
+        setResendCountdown(60);
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  if (loading) {
+  const handleVerifySubmit = async (codeToVerify) => {
+    const finalOtp = codeToVerify || otp;
+    if (!finalOtp || finalOtp.length !== 6) {
+      setVerifyError('Please enter the complete 6-digit code');
+      return;
+    }
+
+    setVerifyLoading(true);
+    setVerifyError('');
+    setResendStatus('');
+    try {
+      const success = await handleVerifyOTP({ 
+        email: emailState.toLowerCase().trim(), 
+        otp: finalOtp 
+      });
+      if (success) {
+        navigate("/dashboard");
+      } else {
+        setVerifyError('Verification failed. Please check your code or request a new one.');
+      }
+    } catch (err) {
+      setVerifyError(err.message || 'Invalid or expired verification code');
+    } finally {
+      setVerifyLoading(false);
+    }
+  };
+
+  const handleResendClick = async () => {
+    if (resendCountdown > 0) return;
+    setVerifyError('');
+    setResendStatus('Sending new code...');
+    try {
+      const res = await handleResendOTP({ email: emailState.toLowerCase().trim() });
+      if (res) {
+        setResendCountdown(60);
+        setResendStatus('A new 6-digit code has been sent to your email.');
+        setOTP('');
+      } else {
+        setResendStatus('');
+        setVerifyError('Unable to resend OTP at this time.');
+      }
+    } catch (err) {
+      setResendStatus('');
+      setVerifyError(err.message || 'Failed to resend code');
+    }
+  };
+
+  if (loading && !isVerifyingScreen) {
     return (
       <main className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center transition-colors">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-          <p className="font-inter text-slate-500 dark:text-slate-400 font-medium text-sm">Creating your account...</p>
+          <p className="font-inter text-slate-500 dark:text-slate-400 font-medium text-sm">Preparing your account...</p>
         </div>
+      </main>
+    );
+  }
+
+  // Show OTP verification form once registration data is validated
+  if (isVerifyingScreen) {
+    const maskedEmail = emailState.replace(/([^@\s]{1,2})[^@\s]*(@.*)/, '$1****$2');
+
+    return (
+      <main className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-6 relative overflow-hidden font-inter transition-colors duration-300">
+        <div className="absolute top-8 right-8 z-20">
+          <ThemeToggle />
+        </div>
+
+        <div className="absolute inset-0 z-0 pointer-events-none">
+           <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-primary/5 dark:bg-primary/10 rounded-full blur-[100px]"></div>
+           <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-secondary/5 dark:bg-secondary/10 rounded-full blur-[100px]"></div>
+        </div>
+
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          className="w-full max-w-md relative z-10 space-y-8"
+        >
+          <div className="text-center space-y-2">
+            <div className="flex justify-center mb-6">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-emerald-400 flex items-center justify-center text-white font-bold text-2xl shadow-lg shadow-primary/30">
+                i
+              </div>
+            </div>
+            <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white font-space-grotesk">
+              Verify your email
+            </h1>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              We've sent a 6-digit verification code to
+            </p>
+            <p className="font-semibold text-slate-900 dark:text-white text-base">
+              {maskedEmail}
+            </p>
+          </div>
+
+          <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-soft border border-slate-100 dark:border-slate-800 transition-colors space-y-6">
+            {verifyError && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/30 rounded-lg text-red-600 dark:text-red-400 text-sm font-medium text-center shadow-sm"
+              >
+                {verifyError}
+              </motion.div>
+            )}
+
+            {resendStatus && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                className="p-3 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/40 rounded-lg text-emerald-700 dark:text-emerald-300 text-sm font-medium text-center"
+              >
+                {resendStatus}
+              </motion.div>
+            )}
+
+            <form onSubmit={(e) => { e.preventDefault(); handleVerifySubmit(); }} className="space-y-6">
+              <div className="space-y-3">
+                <label className="block text-center text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  Enter 6-digit code
+                </label>
+
+                <OTPInput
+                  value={otp}
+                  onChange={(val) => {
+                    setOTP(val);
+                    if (verifyError) setVerifyError('');
+                  }}
+                  onComplete={(val) => {
+                    handleVerifySubmit(val);
+                  }}
+                  isDisabled={verifyLoading}
+                  autoFocus={true}
+                />
+              </div>
+
+              <motion.button
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.99 }}
+                disabled={verifyLoading || otp.length !== 6}
+                type="submit"
+                className={`w-full py-3.5 bg-primary hover:bg-primary-dim text-white font-semibold text-sm rounded-xl shadow-sm transition-all ${verifyLoading || otp.length !== 6 ? 'opacity-60 cursor-not-allowed' : ''}`}
+              >
+                {verifyLoading ? 'Verifying code...' : 'Confirm & Activate Account'}
+              </motion.button>
+            </form>
+
+            <div className="pt-2 text-center space-y-3">
+              <p className="text-slate-500 dark:text-slate-400 text-sm">
+                Didn't receive the email?
+              </p>
+              <button
+                type="button"
+                onClick={handleResendClick}
+                disabled={resendCountdown > 0}
+                className={`px-4 py-2 text-sm font-medium transition-colors border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 ${resendCountdown > 0 ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+              >
+                {resendCountdown > 0 ? `Resend code in ${resendCountdown}s` : 'Resend Code'}
+              </button>
+            </div>
+
+            <div className="text-center text-xs text-slate-400 dark:text-slate-500">
+              This code expires in 5 minutes. Check your spam/junk folder if not found.
+            </div>
+          </div>
+
+          <div className="flex justify-center">
+            <button
+              onClick={() => { setIsVerifyingScreen(false); setOTP(''); }}
+              className="text-sm text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-colors"
+            >
+              ← Back to registration
+            </button>
+          </div>
+        </motion.div>
       </main>
     );
   }
@@ -47,7 +289,7 @@ const Register = () => {
          <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-secondary/5 dark:bg-secondary/10 rounded-full blur-[100px]"></div>
       </div>
 
-      <motion.div 
+      <motion.div
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         className="w-full max-w-md relative z-10 space-y-8"
@@ -67,7 +309,7 @@ const Register = () => {
         <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-soft border border-slate-100 dark:border-slate-800 transition-colors">
           <form onSubmit={handleSubmit} className="space-y-5">
             {authError && (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/30 rounded-lg text-red-600 dark:text-red-400 text-sm font-medium text-center shadow-sm"
@@ -79,33 +321,53 @@ const Register = () => {
             <div className="space-y-1.5">
               <label htmlFor="username" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Full Name</label>
               <input
-                onChange={(e) => setUsername(e.target.value)}
+                onChange={(e) => {
+                  setUsername(e.target.value);
+                  // Clear error when user starts typing
+                  if (e.target.value) setUsernameError('');
+                }}
                 type="text"
                 id="username"
-                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-3 text-sm text-slate-900 dark:text-slate-100 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600"
+                className={`w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-3 text-sm text-slate-900 dark:text-slate-100 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600 ${usernameError ? 'border-red-500' : ''}`}
                 placeholder="John Doe"
                 required
               />
+              {usernameError && (
+                <p className="mt-1 text-sm text-red-600">{usernameError}</p>
+              )}
             </div>
+
             <div className="space-y-1.5">
               <label htmlFor="email" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Email Address</label>
               <input
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmailState(e.target.value);
+                  // Clear error when user starts typing
+                  if (e.target.value) setEmailError('');
+                }}
                 type="email"
                 id="email"
-                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-3 text-sm text-slate-900 dark:text-slate-100 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600"
+                className={`w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-3 text-sm text-slate-900 dark:text-slate-100 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600 ${emailError ? 'border-red-500' : ''}`}
                 placeholder="john@example.com"
                 required
               />
+              {emailError && (
+                <p className="mt-1 text-sm text-red-600">{emailError}</p>
+              )}
             </div>
-             <div className="space-y-1.5 relative">
+
+            <div className="space-y-1.5 relative">
               <label htmlFor="password" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Password</label>
               <div className="relative">
                 <input
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    // Clear error when user starts typing
+                    if (e.target.value) setPasswordError('');
+                  }}
                   type={showPassword ? "text" : "password"}
                   id="password"
-                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-3 pr-10 text-sm text-slate-900 dark:text-slate-100 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600"
+                  className={`w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-3 pr-10 text-sm text-slate-900 dark:text-slate-100 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600 ${passwordError ? 'border-red-500' : ''}`}
                   placeholder="••••••••"
                   required
                 />
@@ -117,14 +379,18 @@ const Register = () => {
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
+              {passwordError && (
+                <p className="mt-1 text-sm text-red-600">{passwordError}</p>
+              )}
             </div>
 
-            <motion.button 
+            <motion.button
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.99 }}
-              className="w-full py-3.5 bg-primary hover:bg-primary-dim text-white font-semibold text-sm rounded-lg shadow-sm transition-all mt-2"
+              disabled={isSubmitting}
+              className={`w-full py-3.5 bg-primary hover:bg-primary-dim text-white font-semibold text-sm rounded-lg shadow-sm transition-all mt-2 ${isSubmitting ? 'opacity-80' : ''}`}
             >
-              Sign Up
+              {isSubmitting ? 'Creating account...' : 'Sign Up'}
             </motion.button>
 
             <div className="mt-6 flex flex-col items-center gap-4 w-full">

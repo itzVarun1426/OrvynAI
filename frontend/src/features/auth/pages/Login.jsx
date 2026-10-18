@@ -12,12 +12,66 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Validation functions
+  const validateEmail = (email) => {
+    if (!email) {
+      return 'Email is required';
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return 'Please enter a valid email address';
+    }
+    return '';
+  };
+
+  const validatePassword = (password) => {
+    if (!password) {
+      return 'Password is required';
+    }
+    if (password.length < 8) {
+      return 'Password must be at least 8 characters long';
+    }
+    // Check for at least one uppercase, one lowercase, and one special character
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*(),.?":{}|<>])/;
+    if (!passwordRegex.test(password)) {
+      return 'Password must contain at least one uppercase letter, one lowercase letter, and one special character';
+    }
+    return '';
+  };
+
+  const [unverifiedEmail, setUnverifiedEmail] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const success = await handleLogin({ email, password });
-    if (success) {
-      navigate("/dashboard");
+
+    // Validate fields
+    const emailErrorMsg = validateEmail(email);
+    const passwordErrorMsg = validatePassword(password);
+
+    setEmailError(emailErrorMsg);
+    setPasswordError(passwordErrorMsg);
+
+    if (emailErrorMsg || passwordErrorMsg) {
+      return; // Don't submit if there are validation errors
+    }
+
+    setIsSubmitting(true);
+    setUnverifiedEmail('');
+    try {
+      const success = await handleLogin({ email, password });
+      if (success) {
+        navigate("/dashboard");
+      }
+    } catch (err) {
+      if (err.isVerified === false || (err.message && err.message.toLowerCase().includes('verify your email'))) {
+        setUnverifiedEmail(email);
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -44,7 +98,7 @@ const Login = () => {
          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/5 dark:bg-primary/10 rounded-full blur-[100px]"></div>
       </div>
 
-      <motion.div 
+      <motion.div
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         className="w-full max-w-md relative z-10 space-y-8"
@@ -64,34 +118,54 @@ const Login = () => {
         <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-soft border border-slate-100 dark:border-slate-800 transition-colors">
           <form onSubmit={handleSubmit} className="space-y-5">
             {authError && (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
-                className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/30 rounded-lg text-red-600 dark:text-red-400 text-sm font-medium text-center shadow-sm"
+                className="p-3.5 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/30 rounded-xl text-red-600 dark:text-red-400 text-sm font-medium text-center shadow-sm space-y-2"
               >
-                Error: {authError}
+                <div>{authError}</div>
+                {unverifiedEmail && (
+                  <Link
+                    to={`/verify-otp/${encodeURIComponent(unverifiedEmail)}`}
+                    className="inline-block mt-1 text-xs font-semibold text-primary underline hover:text-primary-dim"
+                  >
+                    Click here to enter your 6-digit verification code →
+                  </Link>
+                )}
               </motion.div>
             )}
-            
+
             <div className="space-y-1.5">
               <label htmlFor="email" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Email Address</label>
               <input
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  // Clear error when user starts typing
+                  if (e.target.value) setEmailError('');
+                }}
                 type="email"
                 id="email"
-                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-3 text-sm text-slate-900 dark:text-slate-100 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600"
+                className={`w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-3 text-sm text-slate-900 dark:text-slate-100 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600 ${emailError ? 'border-red-500' : ''}`}
                 placeholder="john@example.com"
                 required
               />
+              {emailError && (
+                <p className="mt-1 text-sm text-red-600">{emailError}</p>
+              )}
             </div>
-             <div className="space-y-1.5 relative">
+
+            <div className="space-y-1.5 relative">
               <label htmlFor="password" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Password</label>
               <div className="relative">
                 <input
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    // Clear error when user starts typing
+                    if (e.target.value) setPasswordError('');
+                  }}
                   type={showPassword ? "text" : "password"}
                   id="password"
-                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-3 pr-10 text-sm text-slate-900 dark:text-slate-100 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600"
+                  className={`w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-3 pr-10 text-sm text-slate-900 dark:text-slate-100 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600 ${passwordError ? 'border-red-500' : ''}`}
                   placeholder="••••••••"
                   required
                 />
@@ -103,14 +177,18 @@ const Login = () => {
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
+              {passwordError && (
+                <p className="mt-1 text-sm text-red-600">{passwordError}</p>
+              )}
             </div>
 
-            <motion.button 
+            <motion.button
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.99 }}
-              className="w-full py-3.5 bg-primary hover:bg-primary-dim text-white font-semibold text-sm rounded-lg shadow-sm transition-all mt-2"
+              disabled={isSubmitting}
+              className={`w-full py-3.5 bg-primary hover:bg-primary-dim text-white font-semibold text-sm rounded-lg shadow-sm transition-all mt-2 ${isSubmitting ? 'opacity-80' : ''}`}
             >
-              Sign In
+              {isSubmitting ? 'Signing in...' : 'Sign In'}
             </motion.button>
 
             <div className="mt-6 flex flex-col items-center gap-4 w-full">

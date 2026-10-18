@@ -42,6 +42,42 @@ export async function googleLogin(token) {
     }
 }
 
+export async function sendOTP({ email }) {
+    try {
+        const response = await api.post('/api/auth/send-otp', {
+            email
+        });
+        return response.data;
+    } catch (err) {
+        console.error("Send OTP error:", err.response?.data || err.message);
+        throw err.response?.data || new Error("Failed to send OTP");
+    }
+}
+
+export async function verifyOTP({ email, otp }) {
+    try {
+        const response = await api.post('/api/auth/verify-otp', {
+            email, otp
+        });
+        return response.data;
+    } catch (err) {
+        console.error("Verify OTP error:", err.response?.data || err.message);
+        throw err.response?.data || new Error("Failed to verify OTP");
+    }
+}
+
+export async function resendOTP({ email }) {
+    try {
+        const response = await api.post('/api/auth/resend-otp', {
+            email
+        });
+        return response.data;
+    } catch (err) {
+        console.error("Resend OTP error:", err.response?.data || err.message);
+        throw err.response?.data || new Error("Failed to resend OTP");
+    }
+}
+
 export async function logout() {
     try {
         const response = await api.post("/api/auth/logout");

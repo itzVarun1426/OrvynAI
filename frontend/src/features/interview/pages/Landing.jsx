@@ -55,7 +55,7 @@ const Landing = () => {
               i
             </div>
             <span className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white font-space-grotesk">
-              Interview<span className="text-primary">AI</span>
+              IntervAI
             </span>
           </motion.div>
           <div className="hidden md:flex gap-8 items-center bg-slate-100/50 dark:bg-slate-900/50 px-6 py-2 rounded-full border border-slate-200/50 dark:border-slate-800/50">
@@ -433,7 +433,7 @@ const Landing = () => {
           <div className="grid grid-cols-1 md:grid-cols-5 gap-12 mb-16">
             <div className="md:col-span-2">
               <span className="text-3xl font-black tracking-tight text-white font-space-grotesk mb-6 block">
-                Interview<span className="text-primary">AI</span>
+                IntervAI
               </span>
               <p className="text-slate-400 text-sm mb-8 max-w-sm leading-relaxed">Revolutionizing interview preparation through artificial intelligence. Practice anytime, anywhere, and get real-time feedback to land your dream job.</p>
               <div className="flex gap-4">
@@ -473,7 +473,7 @@ const Landing = () => {
             </div>
           </div>
           <div className="pt-8 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-4">
-            <p className="text-slate-500 text-sm">© 2024 InterviewAI. All rights reserved.</p>
+            <p className="text-slate-500 text-sm">© 2024 IntervAI. All rights reserved.</p>
             <div className="flex gap-6 text-sm text-slate-500">
               <a href="#" className="hover:text-white transition-colors">Status</a>
               <a href="#" className="hover:text-white transition-colors">Security</a>
