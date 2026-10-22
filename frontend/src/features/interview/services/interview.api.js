@@ -1,10 +1,9 @@
 import axios from "axios";
 
 const api = axios.create({
-    baseURL:import.meta.env.VITE_API_URL ,
+    baseURL: import.meta.env.VITE_API_URL,
     withCredentials: true
-
-})
+});
 
 const generateInterviewReport = async ({ selfDescription, jobDescription, resume }) => {
     try {
@@ -25,25 +24,17 @@ const generateInterviewReport = async ({ selfDescription, jobDescription, resume
         return response.data;
     } catch (err) {
         console.error("error in interview.api.js while generating interview report", err);
-        throw err; // Propagate error for the context to handle
+        throw err;
     }
-}
+};
 
 const getInterviewReportById = async (interviewId) => {
     try {
-        if (!interviewId) {
-            return null;
-        }
-
+        if (!interviewId) return null;
         const response = await api.get(`/api/interview/report/${interviewId}`);
-
-        if (!response.data) {
-            return null;
-        }
-
         return response.data;
-
     } catch (err) {
+        console.error("error fetching interview by id", err);
         return null;
     }
 };
@@ -55,11 +46,11 @@ const getAllInterviewReportByUserId = async () => {
             return [];
         }
         return response.data.reports;
+    } catch (err) {
+        console.error("error in interview.api.js while getting all interview reports", err);
+        return [];
     }
-    catch (err) {
-        console.log("error in interview.api.js while getting all interview reports", err);
-    }
-}
+};
 
 const deleteInterviewReport = async (interviewId) => {
     try {
@@ -69,12 +60,12 @@ const deleteInterviewReport = async (interviewId) => {
         console.error("error in interview.api.js while deleting interview report", err);
         throw err;
     }
-}
+};
 
 const submitAnswer = async (interviewId, { questionType, questionIndex, userAnswer, audioBlob }) => {
     try {
         const formData = new FormData();
-        formData.append("questionType", questionType);
+        formData.append("questionType", questionType || "adaptive");
         formData.append("questionIndex", questionIndex);
         formData.append("userAnswer", userAnswer || "");
         
@@ -92,7 +83,17 @@ const submitAnswer = async (interviewId, { questionType, questionIndex, userAnsw
         console.error("error in interview.api.js while submitting answer", err);
         throw err;
     }
-}
+};
+
+const getNextAdaptiveQuestion = async (interviewId) => {
+    try {
+        const response = await api.post(`/api/interview/${interviewId}/next-question`);
+        return response.data;
+    } catch (err) {
+        console.error("error getting next adaptive question", err);
+        throw err;
+    }
+};
 
 const completeInterview = async (interviewId) => {
     try {
@@ -102,13 +103,25 @@ const completeInterview = async (interviewId) => {
         console.error("error in interview.api.js while completing interview", err);
         throw err;
     }
-}
+};
 
-export { 
-    generateInterviewReport, 
-    getInterviewReportById, 
-    getAllInterviewReportByUserId, 
+const retryWeakAreas = async (interviewId) => {
+    try {
+        const response = await api.post(`/api/interview/${interviewId}/retry-weak`);
+        return response.data;
+    } catch (err) {
+        console.error("error creating weak area practice session", err);
+        throw err;
+    }
+};
+
+export {
+    generateInterviewReport,
+    getInterviewReportById,
+    getAllInterviewReportByUserId,
     deleteInterviewReport,
     submitAnswer,
-    completeInterview
+    getNextAdaptiveQuestion,
+    completeInterview,
+    retryWeakAreas
 };

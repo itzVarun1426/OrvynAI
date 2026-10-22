@@ -5,6 +5,7 @@ import Register from './features/auth/pages/Register.jsx';
 import VerifyOTP from './features/auth/pages/VerifyOTP.jsx';
 import Profile from './features/auth/pages/Profile.jsx';
 import Protected from './features/auth/components/Protected.jsx';
+import PublicOnly from './features/auth/components/PublicOnly.jsx';
 import Landing from './features/interview/pages/Landing.jsx';
 import Dashboard from './features/interview/pages/Dashboard.jsx';
 import Interview from './features/interview/pages/Interview.jsx';
@@ -19,15 +20,15 @@ export const router = createBrowserRouter([
     },
     {
         path: "/login",
-        element: <Login />
+        element: <PublicOnly><Login /></PublicOnly>
     },
     {
         path: "/register",
-        element: <Register />
+        element: <PublicOnly><Register /></PublicOnly>
     },
     {
         path: "/verify-otp/:email?",
-        element: <VerifyOTP />
+        element: <PublicOnly><VerifyOTP /></PublicOnly>
     },
     {
         path: "/profile",
@@ -53,4 +54,4 @@ export const router = createBrowserRouter([
         path: "/evaluation/:interviewId",
         element: <Protected><Evaluation /></Protected>
     }
-])
+]);

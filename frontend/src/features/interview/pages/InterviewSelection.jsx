@@ -1,171 +1,255 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect, useContext } from 'react';
+import { motion } from 'framer-motion';
 import { useNavigate, useParams } from 'react-router';
 import { 
   Play, 
   FileText, 
-  ShieldCheck, 
+  Target,
   ArrowRight, 
-  UserCircle2, 
-  Settings2,
-  ChevronRight
+  Layers,
+  ChevronRight,
+  Sparkles,
+  HelpCircle
 } from 'lucide-react';
+import { interviewContext } from '../interview.context';
+import { getInterviewReportById } from '../services/interview.api';
+import ThemeToggle from '../../../components/ThemeToggle';
 
 const InterviewSelection = () => {
   const { interviewId } = useParams();
   const navigate = useNavigate();
+  const { report, setReport } = useContext(interviewContext);
   const [selectedOption, setSelectedOption] = useState('interview');
 
-  const options = [
-    {
-      id: 'interview',
-      title: 'Interactive Interview',
-      description: 'Engage in a live interactive session with our AI interviewer. Real-time transcription and per-question feedback.',
-      icon: Play,
-      color: 'from-primary to-emerald-600',
-      action: () => navigate(`/interview/setup/${interviewId}`)
-    },
-    {
-      id: 'report',
-      title: 'Textual Report',
-      description: 'Skip the live session and view your detailed readiness report, roadmap, and skills gap analysis immediately.',
-      icon: FileText,
-      color: 'from-emerald-400 to-emerald-500',
-      action: () => navigate(`/evaluation/${interviewId}`)
-    }
-  ];
+  useEffect(() => {
+    const fetchReport = async () => {
+      if (report && (report._id === interviewId || report.id === interviewId)) return;
+      try {
+        const data = await getInterviewReportById(interviewId);
+        if (data?.interviewReport) {
+          setReport(data.interviewReport);
+        }
+      } catch (err) {
+        console.error("Failed to load interview report:", err);
+      }
+    };
+    if (interviewId) fetchReport();
+  }, [interviewId, report, setReport]);
+
+  const candidateProfile = report?.candidateProfile || {};
+  const jobAnalysis = report?.jobAnalysis || {};
+  const skillComparison = report?.skillComparison || [];
+  const interviewPlan = report?.interviewPlan || {
+    totalQuestions: 10,
+    breakdown: [
+      { category: "Technical Fundamentals", count: 2 },
+      { category: "Project Deep Dive", count: 3 },
+      { category: "Role-Specific Skills", count: 2 },
+      { category: "Problem Solving", count: 2 },
+      { category: "Behavioral", count: 1 }
+    ],
+    focusAreas: []
+  };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex overflow-hidden font-inter selection:bg-primary/20 selection:text-primary">
-      {/* Background Decor */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/10 rounded-full blur-[120px]" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-emerald-500/10 rounded-full blur-[120px]" />
-      </div>
-
-      {/* Left Sidebar Selection */}
-      <motion.aside 
-        initial={{ x: -100, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        className="w-80 bg-slate-900/40 backdrop-blur-xl border-r border-slate-800 p-8 flex flex-col z-10"
-      >
-        <div className="mb-12">
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-emerald-400 bg-clip-text text-transparent">
-            IntervAI Hub
-          </h1>
-          <p className="text-slate-500 text-sm mt-2">Choose your preparation path</p>
-        </div>
-
-        <nav className="flex-1 space-y-3">
-          {options.map((option) => (
-            <button
-              key={option.id}
-              onClick={() => setSelectedOption(option.id)}
-              className={`w-full group relative flex items-center gap-3 p-4 rounded-xl transition-all duration-300 ${
-                selectedOption === option.id 
-                ? 'bg-primary/10 border-primary/30' 
-                : 'hover:bg-slate-800/50 border-transparent'
-              } border`}
-            >
-              <div className={`p-2 rounded-lg transition-colors ${
-                selectedOption === option.id ? 'bg-primary text-white' : 'bg-slate-800 text-slate-400'
-              }`}>
-                <option.icon size={20} />
-              </div>
-              <div className="text-left flex-1">
-                <p className={`text-sm font-semibold ${
-                  selectedOption === option.id ? 'text-primary' : 'text-slate-300'
-                }`}>
-                  {option.title}
-                </p>
-              </div>
-              <ChevronRight 
-                size={16} 
-                className={`transition-transform duration-300 ${
-                  selectedOption === option.id ? 'translate-x-0 opacity-100' : '-translate-x-2 opacity-0'
-                } text-primary`} 
-              />
-            </button>
-          ))}
-        </nav>
-
-        <div className="mt-auto pt-8 border-t border-slate-800">
-          <div className="flex items-center gap-3 p-3 bg-slate-800/30 rounded-xl">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-slate-700 to-slate-800 flex items-center justify-center border border-slate-700">
-              <UserCircle2 size={24} className="text-slate-400" />
-            </div>
-            <div>
-              <p className="text-xs font-medium text-slate-300">Target Role</p>
-              <p className="text-[10px] text-slate-500 truncate w-40">Software developer intern</p>
-            </div>
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-inter selection:bg-primary/20 selection:text-primary">
+      {/* Top Bar */}
+      <header className="h-16 flex items-center justify-between px-8 bg-slate-900/60 backdrop-blur-md border-b border-slate-800 z-50">
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => navigate('/dashboard')}
+            className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition-colors"
+          >
+            <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+          </button>
+          <div>
+            <h1 className="text-sm font-bold bg-gradient-to-r from-emerald-400 to-teal-300 bg-clip-text text-transparent font-space-grotesk">
+              OrvynAI Session Intelligence
+            </h1>
+            <p className="text-[10px] text-slate-400">
+              Target: {jobAnalysis.targetRole || report?.title || "Candidate Evaluation"}
+            </p>
           </div>
         </div>
-      </motion.aside>
+        <ThemeToggle />
+      </header>
 
-      {/* Main Content Area */}
-      <main className="flex-1 relative flex items-center justify-center p-12 z-10">
-        <AnimatePresence mode="wait">
-          {options.map((option) => option.id === selectedOption && (
+      {/* Main Grid View */}
+      <main className="flex-1 max-w-7xl w-full mx-auto p-6 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Left Side: Personalized Interview Plan & Skill Diagnostics */}
+        <div className="lg:col-span-7 space-y-6">
+          {/* Plan Card */}
+          <motion.div 
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="p-6 rounded-2xl bg-slate-900/50 border border-slate-800 backdrop-blur-xl shadow-xl"
+          >
+            <div className="flex items-center justify-between mb-4 border-b border-slate-800/80 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-primary/20 text-primary flex items-center justify-center">
+                  <Layers size={18} />
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold tracking-widest uppercase text-primary">Pre-Flight Briefing</span>
+                  <h2 className="text-base font-bold text-slate-100">Your Personalized Interview Plan</h2>
+                </div>
+              </div>
+              <div className="px-3 py-1 bg-primary/10 border border-primary/20 rounded-full text-xs font-bold text-primary">
+                {interviewPlan.totalQuestions || 10} Questions
+              </div>
+            </div>
+
+            {/* Breakdown Pills */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
+              {(interviewPlan.breakdown || []).map((item, idx) => (
+                <div key={idx} className="p-3 bg-slate-800/40 rounded-xl border border-slate-700/40 flex items-center justify-between">
+                  <span className="text-xs font-medium text-slate-300">{item.category}</span>
+                  <span className="text-xs font-bold text-primary px-2 py-0.5 bg-primary/10 rounded">
+                    {item.count}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {/* Focus Areas Diagnostic */}
+            <div>
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-2.5">
+                Target Focus Areas & Skill Comparison
+              </span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {skillComparison.slice(0, 6).map((sc, i) => (
+                  <div key={i} className="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80 flex flex-col justify-between">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-bold text-slate-200">{sc.skill}</span>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        sc.status === 'Strong' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
+                        sc.status === 'Weak' ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
+                        'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                      }`}>
+                        {sc.status}
+                      </span>
+                    </div>
+                    {sc.evidence && (
+                      <p className="text-[11px] text-slate-400 italic line-clamp-2">{sc.evidence}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Resume Projects Extracted */}
+          {candidateProfile.projects && candidateProfile.projects.length > 0 && (
             <motion.div
-              key={option.id}
-              initial={{ scale: 0.95, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 1.05, opacity: 0, y: -20 }}
-              transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
-              className="max-w-2xl w-full"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="p-5 rounded-2xl bg-slate-900/40 border border-slate-800"
             >
-              <div className={`w-20 h-20 rounded-3xl bg-gradient-to-br ${option.color} flex items-center justify-center shadow-2xl mb-8 ring-4 ring-slate-950`}>
-                <option.icon size={40} className="text-white" />
+              <div className="flex items-center gap-2 mb-3">
+                <Sparkles size={16} className="text-emerald-400" />
+                <h3 className="text-xs font-bold uppercase tracking-widest text-slate-300">
+                  Detected Projects for Deep Dive
+                </h3>
               </div>
-
-              <h2 className="text-5xl font-bold mb-6 tracking-tight">
-                Ready to level up your <span className={`bg-gradient-to-r ${option.color} bg-clip-text text-transparent`}>preparation?</span>
-              </h2>
-              
-              <p className="text-xl text-slate-400 mb-12 leading-relaxed">
-                {option.description}
-              </p>
-
-              <div className="grid grid-cols-2 gap-6 mb-12">
-                <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-2xl group hover:border-primary/50 transition-colors">
-                  <div className="flex items-center gap-2 text-primary mb-2">
-                    <ShieldCheck size={18} />
-                    <span className="text-xs font-semibold uppercase tracking-wider">Advantage</span>
+              <div className="space-y-2">
+                {candidateProfile.projects.slice(0, 2).map((proj, idx) => (
+                  <div key={idx} className="p-3 bg-slate-950/40 rounded-xl border border-slate-800/60">
+                    <span className="text-xs font-bold text-slate-200">{proj.title}</span>
+                    <p className="text-[11px] text-slate-400 mt-1">{proj.description}</p>
                   </div>
-                  <p className="text-slate-300 text-sm">
-                    {option.id === 'interview' 
-                      ? 'Simulates actual stress and develops muscle memory for technical explanations.' 
-                      : 'Overview of all technical gaps and prioritized learning path for the week.'}
-                  </p>
-                </div>
-                <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-2xl group hover:border-emerald-400/50 transition-colors">
-                  <div className="flex items-center gap-2 text-emerald-400 mb-2">
-                    <Settings2 size={18} />
-                    <span className="text-xs font-semibold uppercase tracking-wider">Method</span>
-                  </div>
-                  <p className="text-slate-300 text-sm">
-                    {option.id === 'interview' 
-                      ? 'Uses Gemini-Flash for low latency evaluation and real-time STT.' 
-                      : 'Comprehensive analysis of resume vs job description requirements.'}
-                  </p>
-                </div>
+                ))}
               </div>
-
-              <button
-                onClick={option.action}
-                className={`group relative flex items-center justify-center gap-3 w-full py-5 rounded-2xl bg-gradient-to-r ${option.color} text-white font-bold text-lg shadow-[0_0_40px_rgba(16,185,129,0.2)] hover:shadow-[0_0_60px_rgba(16,185,129,0.4)] transition-all active:scale-[0.98] overflow-hidden`}
-              >
-                <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
-                <span>{option.id === 'interview' ? 'Launch Interview Session' : 'View Full Report Now'}</span>
-                <ArrowRight size={20} className="transition-transform group-hover:translate-x-1" />
-              </button>
-              
-              <p className="text-center text-slate-500 text-sm mt-6">
-                You can always switch between modes later from the dashboard
-              </p>
             </motion.div>
-          ))}
-        </AnimatePresence>
+          )}
+        </div>
+
+        {/* Right Side: Mode Selection & Action */}
+        <div className="lg:col-span-5 space-y-6">
+          <motion.div 
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+            className="p-6 rounded-2xl bg-slate-900/50 border border-slate-800 backdrop-blur-xl shadow-xl space-y-4"
+          >
+            <h3 className="text-sm font-bold uppercase tracking-widest text-slate-400">Choose Mode</h3>
+
+            {/* Interactive Interview Option */}
+            <div 
+              onClick={() => setSelectedOption('interview')}
+              className={`p-5 rounded-xl border cursor-pointer transition-all ${
+                selectedOption === 'interview'
+                  ? 'bg-primary/10 border-primary/40 shadow-lg shadow-primary/5'
+                  : 'bg-slate-950/40 border-slate-800 hover:border-slate-700'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-primary/20 text-primary flex items-center justify-center">
+                    <Play size={20} />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-100">Live Adaptive Interview</h4>
+                    <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider">Recommended for Demo</span>
+                  </div>
+                </div>
+                <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
+                  selectedOption === 'interview' ? 'border-primary bg-primary' : 'border-slate-600'
+                }`}>
+                  {selectedOption === 'interview' && <div className="w-1.5 h-1.5 bg-white rounded-full" />}
+                </div>
+              </div>
+              <p className="text-xs text-slate-400 leading-relaxed pl-13">
+                Experience dynamic follow-ups, challenge mode, project deep-dives, and verbal speech-to-text input with adaptive difficulty.
+              </p>
+            </div>
+
+            {/* Skip to Report Option */}
+            <div 
+              onClick={() => setSelectedOption('report')}
+              className={`p-5 rounded-xl border cursor-pointer transition-all ${
+                selectedOption === 'report'
+                  ? 'bg-emerald-500/10 border-emerald-500/40 shadow-lg'
+                  : 'bg-slate-950/40 border-slate-800 hover:border-slate-700'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                    <FileText size={20} />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-100">Direct Visual Report</h4>
+                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Fast-track view</span>
+                  </div>
+                </div>
+                <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
+                  selectedOption === 'report' ? 'border-emerald-500 bg-emerald-500' : 'border-slate-600'
+                }`}>
+                  {selectedOption === 'report' && <div className="w-1.5 h-1.5 bg-white rounded-full" />}
+                </div>
+              </div>
+              <p className="text-xs text-slate-400 leading-relaxed pl-13">
+                Skip straight to the analytics dashboard to review skill gaps, study roadmaps, and practice weak areas.
+              </p>
+            </div>
+
+            {/* Launch Button */}
+            <button
+              onClick={() => {
+                if (selectedOption === 'interview') {
+                  navigate(`/interview/setup/${interviewId}`);
+                } else {
+                  navigate(`/evaluation/${interviewId}`);
+                }
+              }}
+              className="w-full mt-4 py-4 rounded-xl font-bold text-xs uppercase tracking-widest bg-primary hover:bg-emerald-600 text-white shadow-lg shadow-primary/25 flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <span>{selectedOption === 'interview' ? 'Start Hardware Check & Interview' : 'View Visual Report'}</span>
+              <ArrowRight size={16} />
+            </button>
+          </motion.div>
+        </div>
       </main>
     </div>
   );

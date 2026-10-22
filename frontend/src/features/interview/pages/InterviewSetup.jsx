@@ -1,9 +1,24 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useParams, useNavigate } from 'react-router';
 import { interviewContext } from '../interview.context';
 import { getInterviewReportById } from '../services/interview.api';
 import ThemeToggle from '../../../components/ThemeToggle';
+import { 
+  ArrowLeft, 
+  Video, 
+  Mic, 
+  CheckCircle2, 
+  AlertCircle, 
+  Wifi, 
+  Sun, 
+  Play, 
+  HelpCircle,
+  FileText,
+  Sliders,
+  Sparkles,
+  Layers
+} from 'lucide-react';
 
 const InterviewSetup = () => {
     const { interviewId } = useParams();
@@ -13,6 +28,7 @@ const InterviewSetup = () => {
     const [permission, setPermission] = useState(false);
     const [stream, setStream] = useState(null);
     const [audioLevel, setAudioLevel] = useState(0);
+    const [isCheckingAudio, setIsCheckingAudio] = useState(false);
     const videoRef = useRef(null);
     const audioContextRef = useRef(null);
     const analyserRef = useRef(null);
@@ -49,34 +65,39 @@ const InterviewSetup = () => {
             setupAudioAnalysis(mediaStream);
         } catch (err) {
             console.error("Permission error:", err);
-            alert("Please allow camera and microphone access to continue.");
+            alert("Please allow camera and microphone access to test your setup.");
         }
     };
 
     const setupAudioAnalysis = (stream) => {
-        audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
-        analyserRef.current = audioContextRef.current.createAnalyser();
-        const source = audioContextRef.current.createMediaStreamSource(stream);
-        source.connect(analyserRef.current);
-        analyserRef.current.fftSize = 256;
+        try {
+            audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+            analyserRef.current = audioContextRef.current.createAnalyser();
+            const source = audioContextRef.current.createMediaStreamSource(stream);
+            source.connect(analyserRef.current);
+            analyserRef.current.fftSize = 256;
 
-        const bufferLength = analyserRef.current.frequencyBinCount;
-        const dataArray = new Uint8Array(bufferLength);
+            const bufferLength = analyserRef.current.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
 
-        const update = () => {
-            analyserRef.current.getByteFrequencyData(dataArray);
-            let sum = 0;
-            for (let i = 0; i < bufferLength; i++) {
-                sum += dataArray[i];
-            }
-            const average = sum / bufferLength;
-            setAudioLevel(average);
-            animationRef.current = requestAnimationFrame(update);
-        };
-        update();
+            const update = () => {
+                if (!analyserRef.current) return;
+                analyserRef.current.getByteFrequencyData(dataArray);
+                let sum = 0;
+                for (let i = 0; i < bufferLength; i++) {
+                    sum += dataArray[i];
+                }
+                const average = sum / bufferLength;
+                setAudioLevel(average);
+                setIsCheckingAudio(average > 5);
+                animationRef.current = requestAnimationFrame(update);
+            };
+            update();
+        } catch (e) {
+            console.error("Audio analyser init error:", e);
+        }
     };
 
-    // Ensure video stream connects after permission state updates the DOM
     useEffect(() => {
         if (permission && stream && videoRef.current) {
             videoRef.current.srcObject = stream;
@@ -91,122 +112,224 @@ const InterviewSetup = () => {
             if (animationRef.current) {
                 cancelAnimationFrame(animationRef.current);
             }
+            if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+                audioContextRef.current.close().catch(() => {});
+            }
         };
     }, [stream]);
 
-    const technicalQuestions = report?.technicalQuestions || [];
-    const behavioralQuestions = report?.behavioralQuestions || [];
-    const allQuestions = [...technicalQuestions, ...behavioralQuestions];
+    // Back button behavior: returns to the interview selection / report view
+    const handleGoBack = () => {
+        if (window.history.length > 2) {
+            navigate(-1);
+        } else {
+            navigate(`/interview/select/${interviewId}`);
+        }
+    };
+
+    const allQuestions = (report?.adaptiveQuestions && report.adaptiveQuestions.length > 0)
+        ? report.adaptiveQuestions
+        : [...(report?.technicalQuestions || []), ...(report?.behavioralQuestions || [])];
+
+    const targetRole = report?.jobAnalysis?.targetRole || report?.title || "Technical Role";
 
     return (
-        <div className="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 font-inter min-h-screen py-8 px-6 transition-colors duration-300">
-            {/* Header */}
-            <header className="max-w-7xl mx-auto flex justify-between items-center mb-10">
+        <div className="bg-slate-950 text-slate-100 font-inter min-h-screen flex flex-col selection:bg-emerald-500/20 selection:text-emerald-400">
+            {/* Top Navigation */}
+            <header className="h-16 flex items-center justify-between px-6 md:px-10 bg-slate-900/60 backdrop-blur-md border-b border-slate-800/80 sticky top-0 z-50">
                 <div className="flex items-center gap-4">
-                    <button onClick={() => navigate('/dashboard')} className="w-10 h-10 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 flex items-center justify-center hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm">
-                        <span className="material-symbols-outlined text-[20px]">arrow_back</span>
+                    <button 
+                        onClick={handleGoBack}
+                        className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700/60 transition-all text-xs font-semibold shadow-sm"
+                        title="Back to Briefing & Report"
+                    >
+                        <ArrowLeft size={16} />
+                        <span>Back to Plan</span>
                     </button>
-                    <h1 className="text-xl font-bold flex items-center gap-2">
-                        <span className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-white text-xs">AI</span>
-                        Interview Readiness
-                    </h1>
+                    <div className="h-4 w-px bg-slate-800 hidden sm:block" />
+                    <div>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 block">System Verification</span>
+                        <h1 className="text-sm font-bold text-white truncate max-w-xs sm:max-w-md">
+                            Pre-Interview Check: {targetRole}
+                        </h1>
+                    </div>
                 </div>
-                <ThemeToggle />
+
+                <div className="flex items-center gap-3">
+                    <button 
+                        onClick={() => navigate(`/evaluation/${interviewId}`)}
+                        className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 text-xs font-semibold transition-colors"
+                    >
+                        <FileText size={14} />
+                        <span>View Report Instead</span>
+                    </button>
+                    <ThemeToggle />
+                </div>
             </header>
 
-            <main className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
-                {/* Left Panel: Hardware Check */}
-                <div className="lg:col-span-8 flex flex-col gap-6">
-                    <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-soft overflow-hidden relative group">
-                        {!permission ? (
-                            <div className="aspect-video bg-slate-100 dark:bg-slate-800 rounded-2xl flex flex-col items-center justify-center gap-4">
-                                <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center text-primary animate-pulse">
-                                    <span className="material-symbols-outlined text-4xl">videocam</span>
-                                </div>
-                                <p className="text-sm font-medium text-slate-500">Enable your camera and microphone to begin.</p>
-                                <button
-                                    onClick={startHardware}
-                                    className="px-8 py-3 bg-primary text-white rounded-full font-bold text-sm shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
-                                >
-                                    Enable Devices
-                                </button>
+            {/* Main Stage */}
+            <main className="max-w-6xl w-full mx-auto p-6 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8 flex-1 items-start">
+                {/* Left Panel: Hardware Stream and Checks */}
+                <div className="lg:col-span-7 space-y-6">
+                    <div className="bg-slate-900/60 rounded-2xl border border-slate-800/80 p-5 backdrop-blur-xl shadow-xl">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-2">
+                                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                                <span className="text-xs font-bold uppercase tracking-wider text-slate-300">Live Camera & Mic Feed</span>
                             </div>
-                        ) : (
-                            <div className="relative aspect-video rounded-2xl overflow-hidden bg-black">
-                                <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-cover scale-x-[-1]" />
-                                <div className="absolute bottom-4 left-4 flex items-center gap-4">
-                                    <div className="flex items-end gap-1 h-8 px-4 py-2 bg-black/40 backdrop-blur-md rounded-full border border-white/10">
-                                        {[...Array(8)].map((_, i) => (
-                                            <motion.div
-                                                key={i}
-                                                animate={{ height: `${Math.max(10, Math.min(100, (audioLevel / 50) * (i + 1) * 20))}%` }}
-                                                className="w-1 bg-primary rounded-full"
-                                            />
-                                        ))}
+                            <span className="text-[11px] font-mono text-slate-400">
+                                {permission ? "Devices Connected" : "Awaiting Authorization"}
+                            </span>
+                        </div>
+
+                        {/* Video Frame */}
+                        <div className="relative aspect-video rounded-xl overflow-hidden bg-slate-950 border border-slate-800 flex items-center justify-center">
+                            {!permission ? (
+                                <div className="p-8 text-center space-y-4 max-w-sm">
+                                    <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center mx-auto">
+                                        <Video size={28} />
                                     </div>
-                                    <span className="text-[10px] font-bold text-white uppercase tracking-widest bg-black/40 px-3 py-1.5 rounded-full backdrop-blur-md">Mic Working</span>
+                                    <div className="space-y-1">
+                                        <h3 className="text-sm font-bold text-white">Enable Camera & Microphone</h3>
+                                        <p className="text-xs text-slate-400 leading-relaxed">
+                                            OrvynAI analyzes your verbal reasoning and audio signals in real-time. Video stays strictly local on your device.
+                                        </p>
+                                    </div>
+                                    <button
+                                        onClick={startHardware}
+                                        className="px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold rounded-xl text-xs uppercase tracking-wider shadow-lg shadow-emerald-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                                    >
+                                        Authorize Devices
+                                    </button>
                                 </div>
-                            </div>
-                        )}
+                            ) : (
+                                <>
+                                    <video 
+                                        ref={videoRef} 
+                                        autoPlay 
+                                        muted 
+                                        playsInline 
+                                        className="w-full h-full object-cover scale-x-[-1]" 
+                                    />
+                                    {/* Mic Level Overlay */}
+                                    <div className="absolute bottom-4 left-4 flex items-center gap-3 px-3.5 py-2 bg-slate-950/80 backdrop-blur-md rounded-xl border border-slate-700/60">
+                                        <Mic size={14} className={isCheckingAudio ? "text-emerald-400" : "text-slate-400"} />
+                                        <div className="flex items-end gap-1 h-4">
+                                            {[...Array(12)].map((_, i) => (
+                                                <div
+                                                    key={i}
+                                                    style={{ height: `${Math.max(15, Math.min(100, (audioLevel / 30) * (i + 1) * 15))}%` }}
+                                                    className={`w-1 rounded-full transition-all duration-75 ${
+                                                        isCheckingAudio ? 'bg-emerald-400' : 'bg-slate-700'
+                                                    }`}
+                                                />
+                                            ))}
+                                        </div>
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-300">
+                                            {isCheckingAudio ? "Mic Active" : "Speak to test"}
+                                        </span>
+                                    </div>
+                                </>
+                            )}
+                        </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm flex items-start gap-4">
-                            <div className="w-10 h-10 rounded-xl bg-orange-100/50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 flex items-center justify-center shrink-0">
-                                <span className="material-symbols-outlined">lightbulb</span>
+                    {/* Environment Tips */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="p-4 rounded-xl bg-slate-900/40 border border-slate-800/80 flex items-start gap-3">
+                            <div className="p-2 rounded-lg bg-amber-500/10 text-amber-400 shrink-0">
+                                <Sun size={18} />
                             </div>
-                            <div>
-                                <h3 className="font-bold text-sm mb-1">Check Lighting</h3>
-                                <p className="text-xs text-slate-500 leading-relaxed">Ensure your face is well-lit for the best evaluation results.</p>
+                            <div className="space-y-0.5">
+                                <h4 className="text-xs font-bold text-white">Lighting & Posture</h4>
+                                <p className="text-[11px] text-slate-400 leading-relaxed">
+                                    Position yourself face-forward with soft frontal light for clear visual presence.
+                                </p>
                             </div>
                         </div>
-                        <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm flex items-start gap-4">
-                            <div className="w-10 h-10 rounded-xl bg-emerald-100/50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-                                <span className="material-symbols-outlined">network_check</span>
+
+                        <div className="p-4 rounded-xl bg-slate-900/40 border border-slate-800/80 flex items-start gap-3">
+                            <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 shrink-0">
+                                <Wifi size={18} />
                             </div>
-                            <div>
-                                <h3 className="font-bold text-sm mb-1">Internet Connection</h3>
-                                <p className="text-xs text-slate-500 leading-relaxed">A stable connection ensures real-time transcription works smoothly.</p>
+                            <div className="space-y-0.5">
+                                <h4 className="text-xs font-bold text-white">Network Stability</h4>
+                                <p className="text-[11px] text-slate-400 leading-relaxed">
+                                    Speech recognition streams locally; Gemini analyzes answers dynamically via low-latency API.
+                                </p>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Right Panel: Questions Preview */}
-                <div className="lg:col-span-4 flex flex-col gap-6">
-                    <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-soft h-[500px] flex flex-col overflow-hidden">
-                        <div className="flex items-center justify-between mb-6">
-                            <h2 className="font-bold flex items-center gap-2">
-                                <span className="material-symbols-outlined text-primary">format_list_bulleted</span>
-                                Session Questions
-                            </h2>
-                            <span className="text-[10px] font-bold bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-md text-slate-500 uppercase tracking-tighter">
-                                {allQuestions.length} Items
+                {/* Right Panel: Session Overview & Launch */}
+                <div className="lg:col-span-5 space-y-6">
+                    <div className="bg-slate-900/60 rounded-2xl border border-slate-800/80 p-6 backdrop-blur-xl shadow-xl space-y-6">
+                        <div className="border-b border-slate-800/80 pb-4">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 block mb-1">
+                                Ready to Begin
                             </span>
+                            <h3 className="text-base font-bold text-white">Adaptive Session Overview</h3>
                         </div>
-                        <div className="flex-1 overflow-y-auto pr-2 space-y-3 custom-scrollbar">
-                            {allQuestions.length > 0 ? allQuestions.map((q, i) => (
-                                <div key={i} className="p-4 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 hover:border-primary/30 transition-all group">
-                                    <div className="flex items-start gap-3">
-                                        <span className="text-[10px] font-bold text-slate-400 group-hover:text-primary transition-colors flex mt-0.5">#{i + 1}</span>
-                                        <p className="text-xs font-medium text-slate-600 dark:text-slate-400 leading-normal line-clamp-2">{q.question}</p>
-                                    </div>
+
+                        {/* Checklist */}
+                        <div className="space-y-3">
+                            <div className="flex items-center justify-between p-3 rounded-xl bg-slate-950/60 border border-slate-800/80">
+                                <div className="flex items-center gap-2.5">
+                                    <Video size={16} className={permission ? "text-emerald-400" : "text-slate-500"} />
+                                    <span className="text-xs font-semibold text-slate-200">Camera Permission</span>
                                 </div>
-                            )) : (
-                                <div className="h-full flex flex-col items-center justify-center text-slate-400">
-                                    <span className="material-symbols-outlined text-4xl mb-2 opacity-20">inventory_2</span>
-                                    <p className="text-xs">Preparing questions...</p>
+                                {permission ? (
+                                    <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">Verified</span>
+                                ) : (
+                                    <span className="text-[10px] text-slate-500">Pending</span>
+                                )}
+                            </div>
+
+                            <div className="flex items-center justify-between p-3 rounded-xl bg-slate-950/60 border border-slate-800/80">
+                                <div className="flex items-center gap-2.5">
+                                    <Mic size={16} className={isCheckingAudio ? "text-emerald-400" : "text-slate-500"} />
+                                    <span className="text-xs font-semibold text-slate-200">Microphone Audio</span>
                                 </div>
-                            )}
+                                {isCheckingAudio ? (
+                                    <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">Detected</span>
+                                ) : (
+                                    <span className="text-[10px] text-slate-500">{permission ? "Speak into Mic" : "Pending"}</span>
+                                )}
+                            </div>
+
+                            <div className="flex items-center justify-between p-3 rounded-xl bg-slate-950/60 border border-slate-800/80">
+                                <div className="flex items-center gap-2.5">
+                                    <Layers size={16} className="text-emerald-400" />
+                                    <span className="text-xs font-semibold text-slate-200">Adaptive AI Engine</span>
+                                </div>
+                                <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">Armed</span>
+                            </div>
                         </div>
-                        <div className="mt-6">
+
+                        {/* Interview Rules Box */}
+                        <div className="p-4 rounded-xl bg-slate-950/40 border border-slate-800/80 space-y-2 text-xs text-slate-400">
+                            <span className="font-bold text-slate-300 block">Interview Protocol:</span>
+                            <ul className="space-y-1.5 list-disc list-inside text-[11px] leading-relaxed">
+                                <li>The AI adapts question difficulty based on your depth of answer.</li>
+                                <li>Unverified buzzwords or shallow claims will trigger <strong>Challenge Mode</strong>.</li>
+                                <li>You can stop at any time to receive your full visual report.</li>
+                            </ul>
+                        </div>
+
+                        {/* Start CTA */}
+                        <div className="pt-2">
                             <button
-                                disabled={!permission || allQuestions.length === 0}
+                                disabled={!permission}
                                 onClick={() => navigate(`/interview/${interviewId}`)}
-                                className={`w-full py-4 rounded-xl font-bold tracking-widest text-xs flex items-center justify-center gap-3 transition-all ${permission && allQuestions.length > 0 ? 'bg-primary text-white shadow-lg shadow-primary/20 hover:scale-[1.02]' : 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed'}`}
+                                className={`w-full py-4 rounded-xl font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${
+                                    permission
+                                        ? 'bg-emerald-500 hover:bg-emerald-600 text-slate-950 shadow-lg shadow-emerald-500/20 hover:scale-[1.02] active:scale-[0.98]'
+                                        : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700/50'
+                                }`}
                             >
-                                START INTERVIEW
-                                <span className="material-symbols-outlined text-[18px]">play_circle</span>
+                                <Play size={16} fill="currentColor" />
+                                <span>{permission ? "Enter Interview Room" : "Authorize Devices First"}</span>
                             </button>
                         </div>
                     </div>

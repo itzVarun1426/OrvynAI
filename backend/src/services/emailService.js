@@ -10,7 +10,7 @@ class EmailService {
    * Helper to render header logo with fallback
    */
   getHeaderBrandHtml() {
-    const logoUrl = process.env.INTERVAI_LOGO_URL ? process.env.INTERVAI_LOGO_URL.trim() : '';
+    const logoUrl = process.env.ORVYNAI_LOGO_URL || process.env.INTERVAI_LOGO_URL ? (process.env.ORVYNAI_LOGO_URL || process.env.INTERVAI_LOGO_URL).trim() : '';
     if (logoUrl) {
       return `
         <table role="presentation" border="0" cellpadding="0" cellspacing="0" style="margin: 0 auto;">
@@ -60,7 +60,7 @@ class EmailService {
       await this.resend.emails.send({
         from: this.fromEmail,
         to: email,
-        subject: `${otp} is your intervAI verification code`,
+        subject: `${otp} is your OrvynAI verification code`,
         html: `
 <!DOCTYPE html>
 <html lang="en">
@@ -98,7 +98,7 @@ class EmailService {
           <tr>
             <td align="center" style="padding: 0 32px 24px 32px;">
               <p style="margin: 0; font-size: 15px; line-height: 24px; color: #475569;">
-                Hi <strong style="color: #0f172a;">${displayName}</strong>, welcome to intervAI! Use the verification code below to confirm your account and get started.
+                Hi <strong style="color: #0f172a;">${displayName}</strong>, welcome to OrvynAI! Use the verification code below to confirm your account and get started.
               </p>
             </td>
           </tr>
@@ -131,7 +131,7 @@ class EmailService {
           <tr>
             <td style="padding: 0 36px 32px 36px;">
               <p style="margin: 0; font-size: 13px; line-height: 20px; color: #64748b; text-align: center;">
-                If you did not create an intervAI account with <strong style="color: #334155;">${email}</strong>, please disregard this email. Your email remains safe.
+                If you did not create an OrvynAI account with <strong style="color: #334155;">${email}</strong>, please disregard this email. Your email remains safe.
               </p>
             </td>
           </tr>
@@ -147,7 +147,7 @@ class EmailService {
           <tr>
             <td align="center" style="padding: 24px 36px 30px 36px; background-color: #fafafa;">
               <p style="margin: 0 0 6px 0; font-size: 12px; color: #94a3b8;">
-                © ${new Date().getFullYear()} intervAI. All rights reserved.
+                © ${new Date().getFullYear()} OrvynAI. All rights reserved.
               </p>
               <p style="margin: 0; font-size: 12px; color: #94a3b8;">
                 AI-Powered Mock Interviews & Smart Candidate Evaluations
@@ -184,14 +184,14 @@ class EmailService {
       await this.resend.emails.send({
         from: this.fromEmail,
         to: email,
-        subject: `Welcome to intervAI, ${displayName}! Your account is ready`,
+        subject: `Welcome to OrvynAI, ${displayName}! Your account is ready`,
         html: `
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Welcome to intervAI</title>
+  <title>Welcome to OrvynAI</title>
 </head>
 <body style="margin: 0; padding: 0; background-color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased;">
   <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f1f5f9; padding: 36px 12px;">
@@ -233,7 +233,7 @@ class EmailService {
           <tr>
             <td align="center" style="padding: 0 32px 24px 32px;">
               <p style="margin: 0; font-size: 15px; line-height: 24px; color: #475569;">
-                Your email has been verified and your intervAI account is active. You are now equipped to master real-world technical and behavioral interviews with AI-guided practice.
+                Your email has been verified and your OrvynAI account is active. You are now equipped to master real-world technical and behavioral interviews with AI-guided practice.
               </p>
             </td>
           </tr>
@@ -287,7 +287,7 @@ class EmailService {
             <td style="padding: 0 36px 30px 36px;">
               <p style="margin: 0; font-size: 13px; line-height: 20px; color: #64748b; text-align: center;">
                 Good luck with your interview preparation! We're thrilled to have you with us.<br>
-                — <strong style="color: #334155;">Team intervAI</strong>
+                — <strong style="color: #334155;">Team OrvynAI</strong>
               </p>
             </td>
           </tr>
@@ -303,10 +303,10 @@ class EmailService {
           <tr>
             <td align="center" style="padding: 24px 36px 30px 36px; background-color: #fafafa;">
               <p style="margin: 0 0 6px 0; font-size: 12px; color: #94a3b8;">
-                © ${new Date().getFullYear()} intervAI. All rights reserved.
+                © ${new Date().getFullYear()} OrvynAI. All rights reserved.
               </p>
               <p style="margin: 0; font-size: 12px; color: #94a3b8;">
-                You received this email because you signed up for an account on intervAI with ${email}.
+                You received this email because you signed up for an account on OrvynAI with ${email}.
               </p>
             </td>
           </tr>

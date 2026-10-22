@@ -1,9 +1,11 @@
 @import "tailwindcss";
 @config "../tailwind.config.js";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @layer base {
   body {
-    @apply transition-colors duration-300 bg-surface-container-lowest text-on-surface antialiased;
+    @apply transition-colors duration-300 bg-white text-slate-900 antialiased;
     font-family: 'Inter', sans-serif;
   }
 
@@ -17,14 +19,14 @@
     width: 8px;
   }
   .dark ::-webkit-scrollbar-track {
-    background: theme('colors.slate.950');
+    background: #020617;
   }
   .dark ::-webkit-scrollbar-thumb {
-    background: theme('colors.slate.800');
+    background: #1e293b;
     border-radius: 10px;
   }
   .dark ::-webkit-scrollbar-thumb:hover {
-    background: theme('colors.slate.700');
+    background: #334155;
   }
 }
 
@@ -47,22 +49,5 @@
 
   .green-glow {
     filter: drop-shadow(0 0 12px rgba(16, 185, 129, 0.4));
-  }
-
-  .text-glow {
-    @apply drop-shadow-[0_0_8px_rgba(16,185,129,0.3)];
-  }
-
-  .animate-pulse-green {
-    animation: pulse-green 3s infinite ease-in-out;
-  }
-}
-
-@keyframes pulse-green {
-  0%, 100% {
-    opacity: 0.4;
-  }
-  50% {
-    opacity: 1;
   }
 }

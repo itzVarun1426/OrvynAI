@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router';
 import { interviewContext } from '../interview.context';
 import ThemeToggle from '../../../components/ThemeToggle';
+import Logo from '../../../components/Logo';
 import { useAuth } from '../../auth/hooks/useAuth';
 
 const Dashboard = () => {
@@ -104,11 +105,9 @@ const Dashboard = () => {
         className="fixed top-0 w-full z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 flex justify-between items-center px-6 h-16 shadow-sm"
       >
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-white font-bold text-xl">
-            i
-          </div>
-          <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
-            IntervAI
+          <Logo size="sm" />
+          <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white font-space-grotesk">
+            Orvyn<span className="text-emerald-400">AI</span>
           </span>
         </div>
         <div className="flex items-center gap-4">

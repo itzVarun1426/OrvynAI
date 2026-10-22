@@ -1,5 +1,10 @@
 import { createContext, useState, useCallback } from "react";
-import { generateInterviewReport as generateReportApi, getAllInterviewReportByUserId, deleteInterviewReport as deleteReportApi } from "./services/interview.api.js";
+import { 
+    generateInterviewReport as generateReportApi, 
+    getAllInterviewReportByUserId, 
+    deleteInterviewReport as deleteReportApi,
+    retryWeakAreas as retryWeakAreasApi 
+} from "./services/interview.api.js";
 
 export const interviewContext = createContext();
 
@@ -51,6 +56,7 @@ export const InterviewProvider = ({ children }) => {
             console.error("Failed to fetch recent reports:", error);
         }
     }, []);
+
     const handleDeleteReport = useCallback(async (interviewId) => {
         try {
             await deleteReportApi(interviewId);
@@ -59,6 +65,16 @@ export const InterviewProvider = ({ children }) => {
         } catch (error) {
             console.error("Failed to delete report:", error);
             return false;
+        }
+    }, []);
+
+    const handleRetryWeakAreas = useCallback(async (interviewId) => {
+        try {
+            const data = await retryWeakAreasApi(interviewId);
+            return data;
+        } catch (error) {
+            console.error("Failed to launch weak areas session:", error);
+            return null;
         }
     }, []);
 
@@ -78,7 +94,8 @@ export const InterviewProvider = ({ children }) => {
             // Actions
             handleGenerateReport,
             handleFetchReports,
-            handleDeleteReport
+            handleDeleteReport,
+            handleRetryWeakAreas
         }}>
             {children}
         </interviewContext.Provider>

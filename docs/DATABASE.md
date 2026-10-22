@@ -1,0 +1,51 @@
+# Database Schema Architecture
+
+## Collection: `users`
+- `username`: String (Unique)
+- `email`: String (Unique)
+- `password`: Hashed String
+- `fullName`: String
+- `avatar`: String
+- `targetRole`: String
+- `isVerified`: Boolean
+- `verificationToken`: Hashed OTP String
+- `verificationExpires`: Date
+- `verificationAttempts`: Number
+
+## Collection: `interviewreports`
+- `user`: ObjectId -> User
+- `jobDescription`: String
+- `resume`: String (extracted text)
+- `title`: String
+- `status`: String ('generated' | 'in-progress' | 'completed')
+- `matchScore`: Number (0-100)
+- `candidateProfile`: Object (skills, languages, frameworks, databases, cloud, projects, education)
+- `jobAnalysis`: Object (requiredSkills, preferredSkills, responsibilities)
+- `skillComparison`: Array of { skill, status: 'Strong'|'Moderate'|'Weak', evidence }
+- `interviewPlan`: Object (totalQuestions, categories: [{ category, count }], focusAreas: [String])
+- `questions`: Array of:
+  - `question`: String
+  - `category`: String ('Fundamentals'|'Project Deep Dive'|'Role Skills'|'Problem Solving'|'Behavioral')
+  - `difficulty`: String ('Beginner'|'Intermediate'|'Advanced'|'Expert')
+  - `projectRef`: String (optional project name)
+  - `whyAsked`: String (explanation of relevance)
+  - `intention`: String
+  - `idealAnswer`: String
+  - `userAnswer`: String
+  - `isChallenge`: Boolean
+  - `feedback`:
+    - `score`: Number
+    - `whatWell`: String
+    - `whatMissing`: String
+    - `howToImprove`: String
+    - `strongerAnswer`: String
+    - `likelyFollowUp`: String
+- `finalEvaluation`:
+  - `overallScore`: Number
+  - `recommendation`: String
+  - `scoreBreakdown`: { technicalKnowledge, problemSolving, communication, projectUnderstanding, systemDesign, roleReadiness }
+  - `skillHeatmap`: Array of { skill, score, level }
+  - `jobReadiness`: { score, summary, priorityAreas: [String] }
+  - `strengths`: Array of { title, evidence }
+  - `weaknesses`: Array of { title, evidence, studyTip, exposedByQuestion }
+- `preparationPlan`: Array of { day, focused_topic, task: [String] }
