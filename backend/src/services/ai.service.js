@@ -572,7 +572,7 @@ Return ONLY valid JSON with this format:
     {
       "day": 7,
       "focused_topic": "Retry Weak Areas Practice",
-      "task": ["Complete intervAI targeted weak-area mini-loop", "Validate score improvement"]
+      "task": ["Complete OrvynAI targeted weak-area mini-loop", "Validate score improvement"]
     }
   ]
 }

@@ -7,8 +7,7 @@ export const useAuth = () => {
     if (!context) {
         throw new Error("useAuth must be used within AuthProvider");
     }
-    const { user, setUser, loading, setLoading } = context;
-    const [authError, setAuthError] = useState(null);
+    const { user, setUser, loading, setLoading, authError, setAuthError } = context;
 
     const handleLogin = async ({ email, password }) => {
         setAuthError(null);
@@ -18,7 +17,8 @@ export const useAuth = () => {
             setUser(data.user);
             return true;
         } catch (err) {
-            setAuthError(err.message || "Invalid credentials");
+            const message = err?.response?.data?.message || err?.message || "Invalid email or password";
+            setAuthError(message);
             throw err;
         } finally {
             setLoading(false);
@@ -30,11 +30,12 @@ export const useAuth = () => {
         try {
             setLoading(true);
             const data = await register({ username, email, password });
-            setUser(data.user);
+            // Do NOT log the user in immediately; account is unverified until OTP is confirmed
             return true;
         } catch (err) {
-            setAuthError(err.message || "Registration failed");
-            return false;
+            const message = err?.response?.data?.message || err?.message || "Registration failed";
+            setAuthError(message);
+            throw err;
         } finally {
             setLoading(false);
         }

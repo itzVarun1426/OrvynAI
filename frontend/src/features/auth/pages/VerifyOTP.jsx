@@ -108,7 +108,7 @@ const VerifyOTP = () => {
         <div className="text-center space-y-2">
           <div className="flex justify-center mb-6">
              <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-white font-bold text-2xl shadow-soft">
-                i
+                O
              </div>
           </div>
           <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
@@ -189,9 +189,12 @@ const VerifyOTP = () => {
             </button>
           </div>
 
-          <div className="mt-8 text-center text-slate-500 dark:text-slate-400 text-sm">
+          <div className="mt-8 text-center text-slate-500 dark:text-slate-400 text-sm space-y-2">
             <p>
               This code will expire in 5 minutes. If you didn't request this verification, you can safely ignore this email.
+            </p>
+            <p className="text-amber-600 dark:text-amber-400 font-medium text-xs bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/50 rounded-lg p-2.5">
+              ⚠️ Don't see the email? Please be sure to check your <strong>spam/junk folder</strong>!
             </p>
           </div>
         </div>

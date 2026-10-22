@@ -10,14 +10,14 @@ class EmailService {
    * Helper to render header logo with fallback
    */
   getHeaderBrandHtml() {
-    const logoUrl = process.env.ORVYNAI_LOGO_URL || process.env.INTERVAI_LOGO_URL ? (process.env.ORVYNAI_LOGO_URL || process.env.INTERVAI_LOGO_URL).trim() : '';
+    const logoUrl = (process.env.ORVYNAI_LOGO_URL || process.env.INTERVAI_LOGO_URL || '').trim();
     if (logoUrl) {
       return `
         <table role="presentation" border="0" cellpadding="0" cellspacing="0" style="margin: 0 auto;">
           <tr>
             <td align="center" style="vertical-align: middle;">
-              <img src="${logoUrl}" alt="intervAI" width="44" height="44" style="display: block; border-radius: 10px; border: 0; outline: none; text-decoration: none; max-width: 44px; max-height: 44px; margin-bottom: 8px;" />
-              <div style="font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 24px; font-weight: 800; color: #0f172a; letter-spacing: -0.5px;">interv<span style="color: #10b981;">AI</span></div>
+              <img src="${logoUrl}" alt="OrvynAI" width="44" height="44" style="display: block; border-radius: 10px; border: 0; outline: none; text-decoration: none; max-width: 44px; max-height: 44px; margin-bottom: 8px;" />
+              <div style="font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 24px; font-weight: 800; color: #0f172a; letter-spacing: -0.5px;">Orvyn<span style="color: #10b981;">AI</span></div>
             </td>
           </tr>
         </table>
@@ -29,9 +29,9 @@ class EmailService {
         <tr>
           <td align="center">
             <div style="display: inline-block; width: 44px; height: 44px; line-height: 44px; text-align: center; background: linear-gradient(135deg, #10b981 0%, #059669 100%); background-color: #10b981; border-radius: 12px; color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 24px; font-weight: 800; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);">
-              i
+              O
             </div>
-            <div style="font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 24px; font-weight: 800; color: #0f172a; letter-spacing: -0.5px; margin-top: 10px;">interv<span style="color: #10b981;">AI</span></div>
+            <div style="font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 24px; font-weight: 800; color: #0f172a; letter-spacing: -0.5px; margin-top: 10px;">Orvyn<span style="color: #10b981;">AI</span></div>
           </td>
         </tr>
       </table>
@@ -105,10 +105,26 @@ class EmailService {
 
           <!-- OTP Digits Container -->
           <tr>
-            <td align="center" style="padding: 8px 32px 24px 32px;">
+            <td align="center" style="padding: 12px 32px 18px 32px;">
               <table role="presentation" border="0" cellpadding="0" cellspacing="0" style="margin: 0 auto;">
                 <tr>
                   ${otpDigitsHtml}
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Easy Copy-Paste Raw Code Block -->
+          <tr>
+            <td align="center" style="padding: 0 32px 24px 32px;">
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" style="margin: 0 auto; background-color: #f1f5f9; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 8px 16px;">
+                <tr>
+                  <td align="center" style="font-size: 13px; color: #64748b; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+                    Double-click or tap to copy code: &nbsp;
+                    <span style="display: inline-block; font-family: 'SF Pro Mono', 'JetBrains Mono', Consolas, Monaco, monospace; font-size: 18px; font-weight: 800; color: #0f172a; letter-spacing: 2px; user-select: all; -webkit-user-select: all; -moz-user-select: all; cursor: pointer; background: #ffffff; padding: 4px 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                      ${otp}
+                    </span>
+                  </td>
                 </tr>
               </table>
             </td>

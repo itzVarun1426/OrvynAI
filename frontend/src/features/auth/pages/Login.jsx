@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState , useEffect } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { useAuth } from '../hooks/useAuth.js';
 import { motion } from 'framer-motion';
@@ -8,13 +8,20 @@ import ThemeToggle from '../../../components/ThemeToggle';
 
 const Login = () => {
   const navigate = useNavigate();
-  const { loading, handleLogin, handleGoogleLogin, authError } = useAuth();
+  const { handleLogin, handleGoogleLogin, handleSendOTP, authError, setAuthError } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Clear auth error on unmount or navigation
+  useEffect(() => {
+    return () => {
+      if (setAuthError) setAuthError(null);
+    };
+  }, [setAuthError]);
 
   // Validation functions
   const validateEmail = (email) => {
@@ -34,11 +41,6 @@ const Login = () => {
     }
     if (password.length < 8) {
       return 'Password must be at least 8 characters long';
-    }
-    // Check for at least one uppercase, one lowercase, and one special character
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*(),.?":{}|<>])/;
-    if (!passwordRegex.test(password)) {
-      return 'Password must contain at least one uppercase letter, one lowercase letter, and one special character';
     }
     return '';
   };
@@ -67,24 +69,20 @@ const Login = () => {
         navigate("/dashboard");
       }
     } catch (err) {
-      if (err.isVerified === false || (err.message && err.message.toLowerCase().includes('verify your email'))) {
+      const errMsg = err?.message || err?.error || "";
+      if (err?.isVerified === false || errMsg.toLowerCase().includes("verify your email")) {
         setUnverifiedEmail(email);
+        // Automatically request an OTP so the user has a fresh code ready
+        handleSendOTP({ email });
+        // Automatically route user to the OTP verification screen
+        navigate(`/verify-otp/${encodeURIComponent(email)}`);
       }
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  if (loading) {
-    return (
-      <main className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center transition-colors">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-          <p className="font-inter text-slate-500 dark:text-slate-400 font-medium text-sm">Signing in...</p>
-        </div>
-      </main>
-    );
-  }
+
 
   return (
     <main className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-6 relative overflow-hidden font-inter transition-colors duration-300">
@@ -106,7 +104,7 @@ const Login = () => {
         <div className="text-center space-y-2">
           <div className="flex justify-center mb-6">
              <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-white font-bold text-2xl shadow-soft">
-                i
+                O
              </div>
           </div>
           <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
@@ -121,17 +119,22 @@ const Login = () => {
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
-                className="p-3.5 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/30 rounded-xl text-red-600 dark:text-red-400 text-sm font-medium text-center shadow-sm space-y-2"
+                className="p-3.5 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-xl text-red-600 dark:text-red-400 text-sm font-medium text-center shadow-sm space-y-2 flex items-center justify-center gap-2"
               >
-                <div>{authError}</div>
-                {unverifiedEmail && (
-                  <Link
-                    to={`/verify-otp/${encodeURIComponent(unverifiedEmail)}`}
-                    className="inline-block mt-1 text-xs font-semibold text-primary underline hover:text-primary-dim"
-                  >
-                    Click here to enter your 6-digit verification code →
-                  </Link>
-                )}
+                <svg className="w-5 h-5 text-red-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <div className="flex-1 text-left">
+                  <span>{authError}</span>
+                  {unverifiedEmail && (
+                    <Link
+                      to={`/verify-otp/${encodeURIComponent(unverifiedEmail)}`}
+                      className="block mt-1 text-xs font-semibold text-primary underline hover:text-primary-dim"
+                    >
+                      Click here to enter your 6-digit verification code →
+                    </Link>
+                  )}
+                </div>
               </motion.div>
             )}
 

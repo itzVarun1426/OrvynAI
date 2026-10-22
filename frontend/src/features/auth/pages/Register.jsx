@@ -8,8 +8,15 @@ import ThemeToggle from '../../../components/ThemeToggle';
 import OTPInput from '../components/OTPInput.jsx';
 
 const Register = () => {
-  const { loading, handleRegister, handleGoogleLogin, authError, handleVerifyOTP, handleResendOTP } = useAuth();
+  const { handleRegister, handleGoogleLogin, authError, setAuthError, handleVerifyOTP, handleResendOTP } = useAuth();
   const navigate = useNavigate();
+
+  // Clear auth error on unmount or navigation
+  useEffect(() => {
+    return () => {
+      if (setAuthError) setAuthError(null);
+    };
+  }, [setAuthError]);
 
   const [username, setUsername] = useState("");
   const [emailState, setEmailState] = useState("");
@@ -92,6 +99,8 @@ const Register = () => {
         setIsVerifyingScreen(true);
         setResendCountdown(60);
       }
+    } catch (err) {
+      // Handled by authError in context
     } finally {
       setIsSubmitting(false);
     }
@@ -144,16 +153,7 @@ const Register = () => {
     }
   };
 
-  if (loading && !isVerifyingScreen) {
-    return (
-      <main className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center transition-colors">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-          <p className="font-inter text-slate-500 dark:text-slate-400 font-medium text-sm">Preparing your account...</p>
-        </div>
-      </main>
-    );
-  }
+
 
   // Show OTP verification form once registration data is validated
   if (isVerifyingScreen) {
@@ -258,8 +258,8 @@ const Register = () => {
               </button>
             </div>
 
-            <div className="text-center text-xs text-slate-400 dark:text-slate-500">
-              This code expires in 5 minutes. Check your spam/junk folder if not found.
+            <div className="text-center text-xs text-slate-500 dark:text-slate-400 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 rounded-lg p-2.5">
+              ⏱️ Code expires in 5 minutes. <strong>Please check your spam/junk folder</strong> if you don't see it in your inbox!
             </div>
           </div>
 
@@ -297,13 +297,13 @@ const Register = () => {
         <div className="text-center space-y-2">
           <div className="flex justify-center mb-6">
              <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-white font-bold text-2xl shadow-soft">
-                i
+                O
              </div>
           </div>
           <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
             Create an Account
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400">Sign up to get started with InterviewAI</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Sign up to get started with OrvynAI</p>
         </div>
 
         <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-soft border border-slate-100 dark:border-slate-800 transition-colors">
@@ -312,9 +312,12 @@ const Register = () => {
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
-                className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/30 rounded-lg text-red-600 dark:text-red-400 text-sm font-medium text-center shadow-sm"
+                className="p-3.5 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-xl text-red-600 dark:text-red-400 text-sm font-medium flex items-center gap-2 shadow-sm"
               >
-                Error: {authError}
+                <svg className="w-5 h-5 text-red-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <span>{authError}</span>
               </motion.div>
             )}
 

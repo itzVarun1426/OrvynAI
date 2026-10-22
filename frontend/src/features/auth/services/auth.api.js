@@ -14,7 +14,10 @@ export async function register({ username, email, password }) {
         return response.data;
     } catch (err) {
         console.error("Registration error:", err.response?.data || err.message);
-        throw err.response?.data || new Error("Registration failed");
+        const errorMsg = err.response?.data?.message || err.message || "Registration failed";
+        const customErr = new Error(errorMsg);
+        customErr.response = err.response;
+        throw customErr;
     }
 }
 
@@ -26,7 +29,11 @@ export async function login({ email, password }) {
         return response.data;
     } catch (err) {
         console.error("Login error:", err.response?.data || err.message);
-        throw err.response?.data || new Error("Login failed");
+        const errorMsg = err.response?.data?.message || err.message || "Login failed";
+        const customErr = new Error(errorMsg);
+        customErr.response = err.response;
+        customErr.isVerified = err.response?.data?.isVerified;
+        throw customErr;
     }
 }
 
