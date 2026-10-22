@@ -96,8 +96,8 @@ const Register = () => {
         password 
       });
       if (success) {
-        setIsVerifyingScreen(true);
-        setResendCountdown(60);
+        // Direct route navigation guarantees the OTP verification page renders reliably
+        navigate(`/verify-otp/${encodeURIComponent(emailState.toLowerCase().trim())}`);
       }
     } catch (err) {
       // Handled by authError in context
@@ -391,9 +391,16 @@ const Register = () => {
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.99 }}
               disabled={isSubmitting}
-              className={`w-full py-3.5 bg-primary hover:bg-primary-dim text-white font-semibold text-sm rounded-lg shadow-sm transition-all mt-2 ${isSubmitting ? 'opacity-80' : ''}`}
+              className={`w-full py-3.5 bg-primary hover:bg-primary-dim text-white font-semibold text-sm rounded-lg shadow-sm transition-all mt-2 flex items-center justify-center gap-2 ${isSubmitting ? 'opacity-80 cursor-wait' : ''}`}
             >
-              {isSubmitting ? 'Creating account...' : 'Sign Up'}
+              {isSubmitting ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <span>Creating account & sending OTP...</span>
+                </>
+              ) : (
+                'Sign Up'
+              )}
             </motion.button>
 
             <div className="mt-6 flex flex-col items-center gap-4 w-full">

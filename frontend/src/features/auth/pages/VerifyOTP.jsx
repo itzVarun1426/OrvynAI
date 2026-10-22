@@ -76,16 +76,7 @@ const VerifyOTP = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <main className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center transition-colors">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-          <p className="font-inter text-slate-500 dark:text-slate-400 font-medium text-sm">Verifying your email...</p>
-        </div>
-      </main>
-    );
-  }
+
 
   return (
     <main className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-6 relative overflow-hidden font-inter transition-colors duration-300">
