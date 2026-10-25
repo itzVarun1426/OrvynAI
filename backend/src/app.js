@@ -4,8 +4,6 @@ import authRouter from './routes/auth.routes.js';
 import interviewRouter from './routes/interview.route.js';
 import cors from 'cors';
 
-
-
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -13,18 +11,21 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-app.use(cors(
-    {
-    origin: ["http://localhost","http://localhost:5173","https://orvyn-ai-mauve.vercel.app"],
+
+// Trust reverse proxy (e.g. Render, Cloudflare, Heroku) for secure cookies over HTTPS
+app.set('trust proxy', 1);
+
+app.use(cors({
+    origin: ["http://localhost", "http://localhost:5173", "https://orvyn-ai-mauve.vercel.app"],
     credentials: true
-}
-))
+}));
+
 app.use(express.json());
 app.use(cookieParser());
 app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
 
-app.use("/api/auth",authRouter);
-app.use("/api/interview",interviewRouter);
+app.use("/api/auth", authRouter);
+app.use("/api/interview", interviewRouter);
 
 // Global Error Handler
 app.use((err, req, res, next) => {
@@ -33,7 +34,5 @@ app.use((err, req, res, next) => {
         error: err.message || "Internal Server Error"
     });
 });
-
-
 
 export default app;

@@ -19,6 +19,7 @@ export const InterviewProvider = ({ children }) => {
     const [interviewError, setInterviewError] = useState(null);
     const [report, setReport] = useState(null);
     const [reports, setReports] = useState([]);
+    const [reportsLoading, setReportsLoading] = useState(false);
 
     const handleGenerateReport = useCallback(async () => {
         setInterviewLoading(true);
@@ -39,7 +40,8 @@ export const InterviewProvider = ({ children }) => {
             }
         } catch (err) {
             console.error("Context Error:", err);
-            setInterviewError("Connection to server lost. Please try again.");
+            const serverMsg = err.response?.data?.error || err.response?.data?.message;
+            setInterviewError(serverMsg || "Connection to server lost. Please try again.");
             return null;
         } finally {
             setInterviewLoading(false);
@@ -47,6 +49,7 @@ export const InterviewProvider = ({ children }) => {
     }, [selfDescription, jobDescription, resumeFile]);
 
     const handleFetchReports = useCallback(async () => {
+        setReportsLoading(true);
         try {
             const data = await getAllInterviewReportByUserId();
             if (data && Array.isArray(data)) {
@@ -54,6 +57,8 @@ export const InterviewProvider = ({ children }) => {
             }
         } catch (error) {
             console.error("Failed to fetch recent reports:", error);
+        } finally {
+            setReportsLoading(false);
         }
     }, []);
 
@@ -90,6 +95,7 @@ export const InterviewProvider = ({ children }) => {
             interviewError, setInterviewError,
             report, setReport,
             reports, setReports,
+            reportsLoading,
 
             // Actions
             handleGenerateReport,

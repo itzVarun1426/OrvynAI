@@ -20,6 +20,7 @@ const Dashboard = () => {
     interviewError,
     handleGenerateReport,
     reports,
+    reportsLoading,
     handleFetchReports,
     handleDeleteReport
   } = useContext(interviewContext);
@@ -326,7 +327,12 @@ const Dashboard = () => {
               Recent Sessions
             </h2>
 
-            {!reports || reports.length === 0 ? (
+            {reportsLoading ? (
+              <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-12 text-center flex flex-col items-center justify-center text-slate-500 dark:text-slate-400">
+                <div className="w-8 h-8 rounded-full border-2 border-primary/20 border-t-primary animate-spin mb-3"></div>
+                <p className="font-medium text-sm">Loading recent sessions...</p>
+              </div>
+            ) : !reports || reports.length === 0 ? (
               <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-8 text-center flex flex-col items-center justify-center text-slate-500 dark:text-slate-400">
                 <span className="material-symbols-outlined text-4xl mb-3 text-slate-300 dark:text-slate-700">description</span>
                 <p className="font-medium text-sm">No recent interview sessions found.</p>

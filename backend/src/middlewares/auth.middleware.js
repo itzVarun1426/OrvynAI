@@ -3,7 +3,18 @@ import blacklistedTokenModel from '../models/blacklist.model.js';
 import userModel from '../models/user.model.js';
 
 async function authUser(req, res, next) {
-    const token = req.cookies?.token;
+    let token = req.cookies?.token;
+
+    // Fallback: check Authorization header (e.g. Bearer <token>)
+    if (!token && req.headers?.authorization) {
+        const parts = req.headers.authorization.split(" ");
+        if (parts.length === 2 && (parts[0] === "Bearer" || parts[0] === "bearer")) {
+            token = parts[1];
+        } else {
+            token = req.headers.authorization;
+        }
+    }
+
     if (!token) {
         return res.status(401).json({
             message: "token not provided"

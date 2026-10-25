@@ -161,9 +161,16 @@ const VerifyOTP = () => {
               whileTap={{ scale: 0.99 }}
               disabled={isVerifying || otp.length !== 6}
               type="submit"
-              className={`w-full py-3.5 bg-primary hover:bg-primary-dim text-white font-semibold text-sm rounded-lg shadow-sm transition-all mt-2 ${isVerifying || otp.length !== 6 ? 'opacity-70 cursor-not-allowed' : ''}`}
+              className={`w-full py-3.5 bg-primary hover:bg-primary-dim text-white font-semibold text-sm rounded-lg shadow-sm transition-all mt-2 flex items-center justify-center gap-2 ${isVerifying || otp.length !== 6 ? 'opacity-70 cursor-not-allowed' : ''}`}
             >
-              {isVerifying ? 'Verifying...' : 'Verify Email'}
+              {isVerifying ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  <span>Verifying Code...</span>
+                </>
+              ) : (
+                'Verify Email'
+              )}
             </motion.button>
           </form>
 

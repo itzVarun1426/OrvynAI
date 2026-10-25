@@ -9,9 +9,13 @@ import crypto from "crypto";
 
 const client = new OAuth2Client();
 
+const isProduction = process.env.NODE_ENV === "production" || process.env.RENDER === "true";
+
 const cookieOptions = {
     httpOnly: true,
-    secure: false,       // only while in development
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
+    maxAge: 24 * 60 * 60 * 1000 // 1 day
 };
 
 /**
@@ -44,7 +48,7 @@ function generateOTP() {
  * @returns {Promise<string>} - Hashed OTP
  */
 async function hashOTP(otp) {
-    const saltRounds = 13; // Same as password hashing
+    const saltRounds = 10;
     return await bcrypt.hash(otp, saltRounds);
 }
 
@@ -186,6 +190,7 @@ const loginUser = async (req, res) => {
         const formattedUser = await formatUserResponse(user);
         return res.status(200).json({
             message: "User logged in successfully",
+            token,
             user: formattedUser
         });
 
@@ -202,15 +207,21 @@ const loginUser = async (req, res) => {
  */
 const logoutUser = async (req, res) => {
     try {
-        const token = req.cookies?.token;
+        let token = req.cookies?.token;
 
-        if (!token) {
-            return res.status(401).json({
-                message: "Unauthorized"
-            });
+        if (!token && req.headers?.authorization) {
+            const parts = req.headers.authorization.split(" ");
+            if (parts.length === 2 && (parts[0] === "Bearer" || parts[0] === "bearer")) {
+                token = parts[1];
+            } else {
+                token = req.headers.authorization;
+            }
         }
+
         res.clearCookie("token", cookieOptions);
-        await blacklistedTokenModel.create({ token });
+        if (token) {
+            await blacklistedTokenModel.create({ token });
+        }
 
         return res.status(200).json({
             message: "User logged out successfully"
@@ -384,6 +395,7 @@ const googleAuth = async (req, res) => {
         const formattedUser = await formatUserResponse(user);
         return res.status(200).json({
             message: "Google login successful",
+            token: jwtToken,
             user: formattedUser
         });
 
@@ -557,6 +569,7 @@ const verifyOTP = async (req, res) => {
         const formattedUser = await formatUserResponse(user);
         return res.status(200).json({
             message: "Email verified successfully",
+            token,
             user: formattedUser
         });
 

@@ -1,9 +1,19 @@
 import axios from "axios";
 
-console.log("VITE_API_URL:", import.meta.env.VITE_API_URL)
+console.log("VITE_API_URL:", import.meta.env.VITE_API_URL);
+
 const api = axios.create({
     baseURL: import.meta.env.VITE_API_URL,
     withCredentials: true
+});
+
+// Attach Authorization header from localStorage if available
+api.interceptors.request.use((config) => {
+    const token = localStorage.getItem("token");
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
 });
 
 export async function register({ username, email, password }) {
@@ -26,6 +36,9 @@ export async function login({ email, password }) {
         const response = await api.post("/api/auth/login", {
             email, password
         });
+        if (response.data?.token) {
+            localStorage.setItem("token", response.data.token);
+        }
         return response.data;
     } catch (err) {
         console.error("Login error:", err.response?.data || err.message);
@@ -42,6 +55,9 @@ export async function googleLogin(token) {
         const response = await api.post("/api/auth/google", {
             token
         });
+        if (response.data?.token) {
+            localStorage.setItem("token", response.data.token);
+        }
         return response.data;
     } catch (err) {
         console.error("Google Login error:", err.response?.data || err.message);
@@ -66,6 +82,9 @@ export async function verifyOTP({ email, otp }) {
         const response = await api.post('/api/auth/verify-otp', {
             email, otp
         });
+        if (response.data?.token) {
+            localStorage.setItem("token", response.data.token);
+        }
         return response.data;
     } catch (err) {
         console.error("Verify OTP error:", err.response?.data || err.message);
@@ -88,9 +107,11 @@ export async function resendOTP({ email }) {
 export async function logout() {
     try {
         const response = await api.post("/api/auth/logout");
+        localStorage.removeItem("token");
         return response.data;
     } catch (err) {
         console.error("Logout error:", err.message);
+        localStorage.removeItem("token");
         throw err;
     }
 }
@@ -131,3 +152,5 @@ export async function uploadAvatarApi(file) {
         throw err.response?.data || new Error("Failed to upload avatar");
     }
 }
+
+export default api;
