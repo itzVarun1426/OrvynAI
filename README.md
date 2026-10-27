@@ -1,7 +1,7 @@
 # OrvynAi
 
 <p align="center">
-  <img src="assets/orvynai-logo.png" alt="OrvynAi Logo" width="180"/>
+  <img src="frontend/public/logo.png" alt="OrvynAi Logo" width="180"/>
 </p>
 
 <h3 align="center">Practice Smarter. Grow Faster.</h3>
